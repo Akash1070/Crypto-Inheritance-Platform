@@ -310,6 +310,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@cip/crypto-core':
+        specifier: workspace:*
+        version: link:../../packages/crypto-core
       '@cip/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol

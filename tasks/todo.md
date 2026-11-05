@@ -37,11 +37,13 @@
 - [x] Implement heir management with step-up token enforcement (`POST /vaults/:id/heirs`)
 - [x] Setup API rate limiting (`@fastify/rate-limit`)
 
-## Phase 4: State Machine & Background Scheduler (`apps/worker`)
-- [ ] Implement `pg-boss` background scheduler for heartbeat expiration
-- [ ] Implement escalating reminder notification pipeline (Email, SMS, WebPush, Emergency Contacts)
-- [ ] Implement Claim initiation and 30-day Challenge Window state machine
-- [ ] Implement instant Owner passkey revocation / cancellation
+## Phase 4: State Machine & Background Scheduler (`apps/worker`) (COMPLETED)
+- [x] Implement heartbeat countdown evaluator (`apps/worker/src/heartbeat.ts`)
+- [x] Implement escalating reminder notification pipeline (Email, SMS, WebPush, Emergency Contacts) (`apps/worker/src/notifications.ts`)
+- [x] Implement Claim initiation and 30-day Challenge Window state machine (`apps/worker/src/claimEngine.ts`)
+- [x] Implement instant Owner passkey revocation / cancellation API (`POST /vaults/:id/claim/cancel`)
+- [x] Implement deterministic scheduler cycle runner with Merkle audit event logging (`apps/worker/src/scheduler.ts`)
+- [x] Comprehensive test suite (15 unit and integration tests passing)
 
 ## Phase 5: Isolated Release Signer Enclave (`apps/release-signer`)
 - [ ] Implement minimalist enclave service (< 1,000 LOC, zero external dependencies)

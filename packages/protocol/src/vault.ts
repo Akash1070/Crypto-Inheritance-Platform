@@ -72,3 +72,18 @@ export const UpdateBlobRequestSchema = z.object({
 }).strict();
 
 export type UpdateBlobRequest = z.infer<typeof UpdateBlobRequestSchema>;
+
+export const InitiateClaimRequestSchema = z.object({
+  heirPubkey: z.string().regex(/^[0-9a-f]{64}$/i, 'Heir public key must be 32-byte hex string'),
+  stepUpToken: z.string().min(10)
+}).strict();
+
+export type InitiateClaimRequest = z.infer<typeof InitiateClaimRequestSchema>;
+
+export const CancelClaimRequestSchema = z.object({
+  stepUpToken: z.string().min(10),
+  reason: z.string().max(200).optional()
+}).strict();
+
+export type CancelClaimRequest = z.infer<typeof CancelClaimRequestSchema>;
+

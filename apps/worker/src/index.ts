@@ -1,10 +1,9 @@
 /**
  * @cip/worker
- * Idempotent background heartbeat evaluation and notification dispatcher.
+ * Background scheduler, escalating notifications, and challenge state machine for Crypto Inheritance Platform.
  */
 
-export async function runHeartbeatCheck() {
-  // Evaluates overdue vaults and escalates reminders
-  return { status: 'idle', evaluatedCount: 0 };
-}
-
+export * from './heartbeat.js';
+export * from './notifications.js';
+export * from './claimEngine.js';
+export * from './scheduler.js';

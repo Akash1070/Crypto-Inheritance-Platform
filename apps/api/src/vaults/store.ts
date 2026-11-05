@@ -9,6 +9,9 @@ export interface VaultRecord {
   gracePeriodDays: number;
   challengeWindowDays: number;
   lastCheckinAt: Date;
+  challengeStartedAt?: Date | undefined;
+  challengeExpiresAt?: Date | undefined;
+  claimingHeirPubkey?: string | undefined;
   version: number;
   createdAt: Date;
 }
@@ -184,6 +187,36 @@ export class MemoryVaultStore {
     const vault = this.vaultsById.get(vaultId);
     if (!vault) return undefined;
     vault.state = state;
+    return vault;
+  }
+
+  async initiateClaim(vaultId: string, heirPubkey: string, now: Date = new Date()): Promise<VaultRecord> {
+    const vault = this.vaultsById.get(vaultId);
+    if (!vault) throw new Error('VAULT_NOT_FOUND');
+    if (vault.state !== 'PENDING') {
+      throw new Error(`CLAIM_REJECTED: Vault is in ${vault.state} state, not PENDING.`);
+    }
+
+    const DAY_MS = 24 * 3600 * 1000;
+    vault.state = 'CHALLENGE';
+    vault.challengeStartedAt = now;
+    vault.challengeExpiresAt = new Date(now.getTime() + vault.challengeWindowDays * DAY_MS);
+    vault.claimingHeirPubkey = heirPubkey;
+    return vault;
+  }
+
+  async cancelClaim(vaultId: string, now: Date = new Date()): Promise<VaultRecord> {
+    const vault = this.vaultsById.get(vaultId);
+    if (!vault) throw new Error('VAULT_NOT_FOUND');
+    if (vault.state !== 'CHALLENGE') {
+      throw new Error(`CANCEL_REJECTED: Vault is not in CHALLENGE state (current: ${vault.state})`);
+    }
+
+    vault.state = 'ACTIVE';
+    vault.lastCheckinAt = now;
+    vault.challengeStartedAt = undefined;
+    vault.challengeExpiresAt = undefined;
+    vault.claimingHeirPubkey = undefined;
     return vault;
   }
 }

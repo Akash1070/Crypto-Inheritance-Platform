@@ -3,6 +3,8 @@ import {
   CreateVaultRequestSchema,
   AddHeirRequestSchema,
   UpdateBlobRequestSchema,
+  InitiateClaimRequestSchema,
+  CancelClaimRequestSchema,
   BANNED_SECRET_KEYS
 } from '@cip/protocol';
 import { generateSigningKeyPair, SigningKeyPair } from '@cip/crypto-core';
@@ -363,6 +365,106 @@ export const vaultRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
     const verification = await eventChainManager.verifyEventChain(vault.id, signingKey.publicKey);
 
     return reply.send(verification);
+  });
+
+  // 11. Initiate Heir Claim (Requires Step-Up Token)
+  fastify.post('/:id/claim', async (request, reply) => {
+    const userId = request.userId!;
+    const { id } = request.params as { id: string };
+
+    const parseResult = InitiateClaimRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({ error: 'INVALID_REQUEST', details: parseResult.error.format() });
+    }
+
+    const { heirPubkey, stepUpToken } = parseResult.data;
+    const consumedUserId = await authStore.verifyAndConsumeStepUpToken(stepUpToken, 'INITIATE_CLAIM');
+    if (!consumedUserId || consumedUserId !== userId) {
+      return reply.status(403).send({ error: 'STEP_UP_REQUIRED', message: 'Valid step-up token required to initiate claim' });
+    }
+
+    const vault = await vaultStore.getVaultById(id);
+    if (!vault) {
+      return reply.status(404).send({ error: 'VAULT_NOT_FOUND' });
+    }
+
+    const heirs = await vaultStore.getHeirs(vault.id);
+    const heir = heirs.find((h) => h.heirPubkey.toLowerCase() === heirPubkey.toLowerCase() && h.status === 'ACTIVE');
+    if (!heir) {
+      return reply.status(403).send({ error: 'HEIR_NOT_AUTHORIZED', message: 'Heir public key not registered on this vault' });
+    }
+
+    try {
+      const updated = await vaultStore.initiateClaim(vault.id, heirPubkey);
+      const signingKey = await getServerSigningKey();
+      const event = await eventChainManager.appendEvent(
+        vault.id,
+        'CLAIM_INITIATED',
+        {
+          heirPubkey,
+          heirId: heir.id,
+          challengeExpiresAt: updated.challengeExpiresAt?.toISOString()
+        },
+        signingKey
+      );
+
+      return reply.send({
+        success: true,
+        state: updated.state,
+        challengeExpiresAt: updated.challengeExpiresAt,
+        eventSequence: event.sequence
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Claim initiation failed';
+      return reply.status(400).send({ error: 'CLAIM_FAILED', message });
+    }
+  });
+
+  // 12. Cancel Active Claim by Owner (Instant Passkey Assertion)
+  fastify.post('/:id/claim/cancel', async (request, reply) => {
+    const userId = request.userId!;
+    const { id } = request.params as { id: string };
+
+    const parseResult = CancelClaimRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({ error: 'INVALID_REQUEST', details: parseResult.error.format() });
+    }
+
+    const { stepUpToken, reason } = parseResult.data;
+    const consumedUserId = await authStore.verifyAndConsumeStepUpToken(stepUpToken, 'CANCEL_CLAIM');
+    if (!consumedUserId || consumedUserId !== userId) {
+      return reply.status(403).send({ error: 'STEP_UP_REQUIRED', message: 'Valid step-up token required to cancel claim' });
+    }
+
+    const vault = await vaultStore.getVaultById(id);
+    if (!vault || vault.ownerId !== userId) {
+      return reply.status(404).send({ error: 'VAULT_NOT_FOUND' });
+    }
+
+    try {
+      const updated = await vaultStore.cancelClaim(vault.id);
+      const signingKey = await getServerSigningKey();
+      const event = await eventChainManager.appendEvent(
+        vault.id,
+        'CLAIM_CANCELLED',
+        {
+          cancelledBy: userId,
+          reason: reason || 'Owner passkey assertion',
+          timestamp: new Date().toISOString()
+        },
+        signingKey
+      );
+
+      return reply.send({
+        success: true,
+        state: updated.state,
+        lastCheckinAt: updated.lastCheckinAt,
+        eventSequence: event.sequence
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Claim cancellation failed';
+      return reply.status(400).send({ error: 'CANCEL_FAILED', message });
+    }
   });
 };
 

@@ -320,5 +320,114 @@ describe('Vault Coordination API & Tamper-Proof Event Chaining', () => {
       expect(verifyBody.error?.includes('signature forgery or tamper')).toBe(true);
     });
   });
+
+  describe('Heir Claim Initiation & Owner Cancellation API', () => {
+    it('handles the complete claim and owner cancellation lifecycle with step-up verification', async () => {
+      // Create user B as heir
+      const userHeir = await authStore.createUser('heir_bob', 'bob@example.com');
+      const heirSession = await authStore.createSession(userHeir.id);
+      const heirCookie = `cip-session=${heirSession.id}`;
+
+      // Create vault under user A
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/vaults',
+        headers: { cookie: sessionCookieA },
+        payload: {
+          label: 'Estate Trust Vault',
+          ciphertextEnvelope: validEnvelopeJson,
+          sealedEscrowShare: 'hex-sealed-escrow'
+        }
+      });
+      const { vaultId } = JSON.parse(createRes.payload);
+
+      // Register heir on vault
+      const heirPubkey = '33'.repeat(32);
+      const addHeirStepUp = await authStore.createStepUpToken(userA.id, 'ADD_HEIR');
+      const addHeirRes = await app.inject({
+        method: 'POST',
+        url: `/vaults/${vaultId}/heirs`,
+        headers: {
+          cookie: sessionCookieA,
+          'x-cip-stepup': addHeirStepUp
+        },
+        payload: {
+          label: 'Son Bob',
+          heirPubkey,
+          wrappedHeirShare: 'sealed-heir-share-data'
+        }
+      });
+      expect(addHeirRes.statusCode).toBe(201);
+
+      // 1. Heir attempt to claim while ACTIVE fails
+      const claimStepUp1 = await authStore.createStepUpToken(userHeir.id, 'INITIATE_CLAIM');
+      const prematureClaimRes = await app.inject({
+        method: 'POST',
+        url: `/vaults/${vaultId}/claim`,
+        headers: { cookie: heirCookie },
+        payload: {
+          heirPubkey,
+          stepUpToken: claimStepUp1
+        }
+      });
+      expect(prematureClaimRes.statusCode).toBe(400);
+      expect(JSON.parse(prematureClaimRes.payload).error).toBe('CLAIM_FAILED');
+
+      // 2. Transition vault to PENDING (e.g. interval + grace elapsed)
+      await vaultStore.updateVaultState(vaultId, 'PENDING');
+
+      // 3. Heir claims with step-up token
+      const claimStepUp2 = await authStore.createStepUpToken(userHeir.id, 'INITIATE_CLAIM');
+      const validClaimRes = await app.inject({
+        method: 'POST',
+        url: `/vaults/${vaultId}/claim`,
+        headers: { cookie: heirCookie },
+        payload: {
+          heirPubkey,
+          stepUpToken: claimStepUp2
+        }
+      });
+      expect(validClaimRes.statusCode).toBe(200);
+      const claimBody = JSON.parse(validClaimRes.payload);
+      expect(claimBody.state).toBe('CHALLENGE');
+      expect(claimBody.challengeExpiresAt).toBeDefined();
+
+      // 4. Owner receives challenge notification and immediately cancels via passkey assertion
+      const cancelStepUp = await authStore.createStepUpToken(userA.id, 'CANCEL_CLAIM');
+      const cancelRes = await app.inject({
+        method: 'POST',
+        url: `/vaults/${vaultId}/claim/cancel`,
+        headers: { cookie: sessionCookieA },
+        payload: {
+          stepUpToken: cancelStepUp,
+          reason: 'I am alive and healthy'
+        }
+      });
+      expect(cancelRes.statusCode).toBe(200);
+      const cancelBody = JSON.parse(cancelRes.payload);
+      expect(cancelBody.state).toBe('ACTIVE');
+
+      // 5. Verify the full cryptographic Merkle hash chain contains the events
+      const chainRes = await app.inject({
+        method: 'GET',
+        url: `/vaults/${vaultId}/events`,
+        headers: { cookie: sessionCookieA }
+      });
+      const chainBody = JSON.parse(chainRes.payload);
+      const eventTypes = chainBody.events.map((e: { type: string }) => e.type);
+      expect(eventTypes).toContain('VAULT_CREATED');
+      expect(eventTypes).toContain('HEIR_ADDED');
+      expect(eventTypes).toContain('CLAIM_INITIATED');
+      expect(eventTypes).toContain('CLAIM_CANCELLED');
+
+      // Verify chain integrity
+      const verifyRes = await app.inject({
+        method: 'GET',
+        url: `/vaults/${vaultId}/events/verify`,
+        headers: { cookie: sessionCookieA }
+      });
+      expect(JSON.parse(verifyRes.payload).valid).toBe(true);
+    });
+  });
 });
 
