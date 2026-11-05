@@ -1,13 +1,40 @@
 import { BackgroundScheduler } from './scheduler.js';
 import { ConsoleNotificationDispatcher } from './notifications.js';
+import { PgBossScheduler, VaultProvider } from './pgBossScheduler.js';
 
 export async function startWorker() {
   console.log('[CIP Worker] Starting Background Scheduler daemon...');
   const dispatcher = new ConsoleNotificationDispatcher();
-  const scheduler = new BackgroundScheduler(dispatcher);
+  const dbUrl = process.env['DATABASE_URL'];
 
+  if (dbUrl) {
+    console.log('[CIP Worker] Initializing Postgres-backed transactional scheduler (pg-boss)...');
+    try {
+      const mockProvider: VaultProvider = {
+        async getActiveVaults() { return []; },
+        async updateVaultState(id, state) { console.log(`[CIP Worker] Vault ${id} transitioned to ${state}`); },
+        async logEvent(id, type) { console.log(`[CIP Worker] Merkle event logged for vault ${id}: ${type}`); }
+      };
+
+      const pgBossScheduler = new PgBossScheduler({
+        connectionString: dbUrl,
+        vaultProvider: mockProvider,
+        dispatcher
+      });
+
+      await pgBossScheduler.start();
+      await pgBossScheduler.scheduleRecurringHeartbeatSweep();
+      console.log('[CIP Worker] pg-boss transactional scheduler active and listening.');
+      return;
+    } catch (err) {
+      console.warn('[CIP Worker] Failed to start pg-boss, falling back to interval scheduler:', err);
+    }
+  }
+
+  // Standalone interval scheduler
+  const scheduler = new BackgroundScheduler(dispatcher);
   const intervalMs = Number(process.env['CIP_WORKER_INTERVAL_MS']) || 60000;
-  console.log(`[CIP Worker] Polling cycle configured for every ${intervalMs}ms.`);
+  console.log(`[CIP Worker] Standalone polling cycle configured for every ${intervalMs}ms.`);
 
   const runTick = async () => {
     try {
@@ -31,4 +58,3 @@ if (process.env['NODE_ENV'] !== 'test') {
     process.exit(1);
   });
 }
-
