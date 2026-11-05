@@ -1,10 +1,53 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const TEST_TLS_CERT = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'cert.pem'), 'utf-8');
-const TEST_TLS_KEY = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'key.pem'), 'utf-8');
+const TEST_TLS_CERT = `-----BEGIN CERTIFICATE-----
+MIIDFzCCAf+gAwIBAgIUNxdi6uLso3V4kRjS/53ueOMIaAAwDQYJKoZIhvcNAQEL
+BQAwGzEZMBcGA1UEAwwQY2lwLXRlc3QtZW5jbGF2ZTAeFw0yNjExMDUxNjU5NDBa
+Fw0zNjExMDIxNjU5NDBaMBsxGTAXBgNVBAMMEGNpcC10ZXN0LWVuY2xhdmUwggEi
+MA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCpUAiSqlLE8Hbg1zpYDIOKoAzW
+lHj6oH01pCo2Xr6fyLobDWc466ApLkeftZ5SLZsCVUgM4aZcR/bWoPP1XHRucaKl
+QcJVkUwAsWB42/MBuIlnPI4K8Eg0fGl9FMXDaDMBbqogIx9aGInvkWnoI96gUWOJ
+ybHX8v3RA7Wpajgjiw1hhjJ9ZsV4EbD63J1lbwY0+XqnqEpUBJggjpIX3udYZ4UY
+iEiqiluEQJYCKSO6QGlhdYZyIn4i4MThaY5OCgmh4df4VjgUw0sqPhzYoQyooL7u
+uiBFZs78wVsjW8ZM+gcwvrdfc+RgRp0dao+dXLAesH/o5CoFSL5Mva9nqTSRAgMB
+AAGjUzBRMB0GA1UdDgQWBBR1MCQIcqaHsFetwsHKsxe3JVg5BDAfBgNVHSMEGDAW
+gBR1MCQIcqaHsFetwsHKsxe3JVg5BDAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3
+DQEBCwUAA4IBAQAj6inzzczrSZAQ5Z6N0xyzFfsatA86SihD9saStZgWDoxzW0lv
+Yzl33bMBRvYNAKiiLE0yVt4G8IP81UP2C4oc6zWJQbYV35nojwB4zZXetG+Dh3Hf
+KmMVkUzULZalwrSJjyGldNmxqQB1DcNnpmgo91YxT8kjETA1uLsoJzOBVzqw6zAs
+dwcd31MT1rG8FMs2HMkV7V/BbJsgBlfPkGgjf5Huuf297umBig0cgFaNtTAJLWuO
+mDtpfkmgU9wWovCBhocvhY5xJSXcjEsY63E4hErcv2VLDyallA3XX0ERUib8JtRK
+bNVyoZuh7hli28DfYJ0teUpg12c60emx9jQA
+-----END CERTIFICATE-----`;
+
+const TEST_TLS_KEY = `-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCpUAiSqlLE8Hbg
+1zpYDIOKoAzWlHj6oH01pCo2Xr6fyLobDWc466ApLkeftZ5SLZsCVUgM4aZcR/bW
+oPP1XHRucaKlQcJVkUwAsWB42/MBuIlnPI4K8Eg0fGl9FMXDaDMBbqogIx9aGInv
+kWnoI96gUWOJybHX8v3RA7Wpajgjiw1hhjJ9ZsV4EbD63J1lbwY0+XqnqEpUBJgg
+jpIX3udYZ4UYiEiqiluEQJYCKSO6QGlhdYZyIn4i4MThaY5OCgmh4df4VjgUw0sq
+PhzYoQyooL7uuiBFZs78wVsjW8ZM+gcwvrdfc+RgRp0dao+dXLAesH/o5CoFSL5M
+va9nqTSRAgMBAAECggEACSJY1g3DiZ2l8i8WVhP1wEOucaCgrre8DYnp35VIsC7Y
+cHduhUz77uDQ6yI1lH4indN7P7uoOZQF0nIsOyVV4DP39/WmXe6o5KQtHdQS5fm+
+SvAiwx8PrCo2mDGH0kkTsFz3p2Rxr28BuQeVqLkPrIM7jR5RHoL807sBIM7K0Mr8
+Ev4VD6W6DoiqyAegx53IyRLP16LZxs7IOEdh3wYqXxMO6UkIvOomNknPMQ+4Pl1/
+3GA+cTPQlkfrIBWaUBaljYcdrGKiEI7Ay3AfTRbI1hjHeBiq9/purAz4h68D3twY
+vReWp72MfZ1wq4zfEtbcjkzm8tTTLlpk0XbZRlLBQQKBgQDQQw+wRklKRctaakPY
+oLzecYSrN5Bu+h+CzzTly+hbMj1PbzMdhTMp3Tt3QZc19P4upFDQd/qeVqOeVyiJ
+Pnkxc5fstCp3n/gsCj0ZiNfXo8Y/A/9CgIufSMcTvu8Qaonb/esqzkwK2HnaACdi
+pzUBxvzczD8+85ZD7+jbM9K4YQKBgQDQH2bkas9ptag3lDbtBsL6jBqgNwOrxN7K
+f//aC8En288kZRpo1I/Z9uHS3wXrRDIcoIR0IL9hcVCW2bPxwoUTy16/j2okYXAl
+Lykwn1hCZT6YlIMEv7tKKypcDY+98I9HLcU9dTgpF7h3xtV9aEV3LPnqip4zolKO
+ETpAkpQqMQKBgQCbs5d2HYZLzhRzm4Dv43RxBgO/EkKchcmrPYj5yNIF5HCsA6H+
+jwgqY2lDBrmrMGgcrOJyiVDIslOPXPBEc32eOCK8aBJb7zBWlK0LeyCL6ribgjyE
+FqDMTFfx7kzDRDOfUp5QGX4GmcO39Wd8vS/HDWMdHGKoiOquDh5US9Fd4QKBgQCI
+NCTYU/aNze7bAMq5cHVmFw7Nz3M9lMfhasd8Ybj1Zus3fFs+Q+4ozWOY55AuGiFZ
+jstgXJYjJU+CidMz4wPIoo3NfAQQ7xu/mg+w3HecbDn9DSR5lSjzLzC3scBio+6A
+vLmasP4iFn4JFT1ep0De77ZXAoTqcc7pXujqnYMN4QKBgGxICs35ksvrnpkwgKct
+H9vHVBcRaL0dkrPiGlPlEaOgQtIYCblCmYb1qeDOacItC731pCXHGY7aKubonDVm
+zqBebBdq04fs1hy3VAXyVD0J7v+G/JtlprmbB29ARwjol26ELDgjtpQ/Fwt2TAGf
+cDZ000spyHBrL/eNAIk8nwgW
+-----END PRIVATE KEY-----`;
 import {
   verifyMultiClock,
   constructBeaconPayload,

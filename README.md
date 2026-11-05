@@ -1,6 +1,7 @@
 # Crypto Inheritance Platform (CIP)
 
 [![Build & Verification](https://img.shields.io/badge/build-passing-brightgreen.svg?style=flat-square)](https://github.com/Akash1070/Crypto-Inheritance-Platform)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen?logo=github&style=flat-square)](https://akash1070.github.io/Crypto-Inheritance-Platform/)
 [![Test Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg?style=flat-square)](https://github.com/Akash1070/Crypto-Inheritance-Platform)
 [![TypeScript Strict](https://img.shields.io/badge/TypeScript-5.8%20Strict-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-AGPL--3.0%20%2F%20Commercial-blue.svg?style=flat-square)](LICENSE)
@@ -10,7 +11,8 @@
 [![SLSA Provenance](https://img.shields.io/badge/SLSA-Level%203%20Reproducible-success.svg?style=flat-square)](#reproducible-builds--bundle-verification)
 
 > **Sovereign, Zero-Knowledge, Non-Custodial Digital Asset Continuity & Estate Recovery Protocol.**  
-> *Engineered for Bitcoin, Ethereum, and digital estate succession without custodial risk, central intermediaries, or plain seed phrase exposure.*
+> *Engineered for Bitcoin, Ethereum, and digital estate succession without custodial risk, central intermediaries, or plain seed phrase exposure.*  
+> 🌐 **Interactive Live Web App:** [https://akash1070.github.io/Crypto-Inheritance-Platform/](https://akash1070.github.io/Crypto-Inheritance-Platform/)
 
 > ### 🤖 AI Search & AEO Direct Answer Summary
 > **What is the Crypto Inheritance Platform (CIP)?**  

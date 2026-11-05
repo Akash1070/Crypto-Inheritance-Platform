@@ -33,7 +33,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install Dependencies
-        run: pnpm install --no-frozen-lockfile --ignore-scripts
+        run: pnpm install --no-frozen-lockfile
 
       - name: Secret Scan (Gitleaks)
         uses: gitleaks/gitleaks-action@v2
