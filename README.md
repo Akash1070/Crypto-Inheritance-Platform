@@ -3,7 +3,7 @@
 [![Build & Verification](https://img.shields.io/badge/build-passing-brightgreen.svg?style=flat-square)](https://github.com/crypto-inheritance-platform/crypto-inheritance-platform)
 [![Test Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg?style=flat-square)](https://github.com/crypto-inheritance-platform/crypto-inheritance-platform)
 [![TypeScript Strict](https://img.shields.io/badge/TypeScript-5.8%20Strict-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/license-Apache--2.0%20%2F%20MIT-blue.svg?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/license-AGPL--3.0%20%2F%20Commercial-blue.svg?style=flat-square)](LICENSE)
 [![Zero-Secret Invariant](https://img.shields.io/badge/invariant-zero--secret%20enforced-success.svg?style=flat-square)](#the-5-non-negotiable-security-invariants)
 [![WebAuthn Passkeys](https://img.shields.io/badge/auth-FIDO2%20Passkeys%20Only-orange.svg?style=flat-square)](#3-identity-layer-passkeys-only)
 [![Isolated Enclave](https://img.shields.io/badge/enclave-AWS%20Nitro%20%7C%20GCP%20Confidential-purple.svg?style=flat-square)](#4-isolated-release-signer-enclave)
@@ -14,16 +14,44 @@
 
 ---
 
-> ### 🏢 Want to build this at enterprise level?
-> If you or your organization want to take the Crypto Inheritance Platform to production — scaling, compliance, custom deployments, or white-label — reach out directly:
+> ### 🏢 Enterprise Deployment, Custom Integrations & Commercial Licensing
 >
-> - **Telegram:** [t.me/akash_kumar107](https://t.me/akash_kumar107)
-> - **LinkedIn:** [linkedin.com/in/akashkumar107](https://www.linkedin.com/in/akashkumar107/)
+> Are you an institution, family office, crypto exchange, custody provider, or neo-bank seeking to implement institutional crypto inheritance?
+>
+> We provide end-to-end commercial architecture and developer support:
+> - **Commercial Dual-Licensing:** Full rights for closed-source proprietary enterprise deployments exempt from AGPLv3.
+> - **Turnkey Production Deployments:** Hardened setups on AWS Nitro Enclaves, GCP Confidential VMs, or on-premise HSMs.
+> - **Custom Custody & Web3 Integrations:** Multi-sig (Safe), MPC, exchange account failovers, and cold wallet protocols.
+> - **Dedicated SLA, Architecture Reviews & Custom Engineering:** Dedicated engineering team available for enterprise rollout.
+>
+> **Direct Contact for Enterprise Leads:**
+> - **Telegram:** [@akash_kumar107](https://t.me/akash_kumar107)
+> - **LinkedIn:** [Akash Kumar Jha](https://www.linkedin.com/in/akashkumar107/)
+> - **GitHub:** [@Akash1070](https://github.com/Akash1070)
+
+---
+
+## Platform Interface & Live Walkthrough
+
+Experience sovereign crypto inheritance built with institutional cryptographic rigor and consumer-friendly simplicity.
+
+### 1. Sovereign Dashboard & One-Tap Liveness Check-In
+![Sovereign Dashboard Overview](docs/assets/dashboard-overview.jpg)
+*Real-time biometric check-in countdown, zero-secret coordination, and 3-step estate continuity walkthrough.*
+
+### 2. Protected Estate Assets & Designated Beneficiaries
+![Estate Assets & Beneficiaries](docs/assets/estate-assets-heirs.jpg)
+*Comprehensive asset tracking across cold storage, multisig safes, and hardware backups ($1.62M demo portfolio) paired with cryptographic heir share allocations (70% Spouse, 30% Son).*
+
+### 3. 60-Second In-Browser Vault Wizard
+![Protect a New Vault Modal](docs/assets/create-vault-modal.jpg)
+*Intuitive 4-step guided setup for family members and heirs, backed by optional air-gapped CLI (`cip`) and encrypted JSON bundle upload modes for institutional security.*
 
 ---
 
 ## Table of Contents
 
+- [Platform Interface & Live Walkthrough](#platform-interface--live-walkthrough)
 - [1. The Problem: Why Legacy Inheritance Fails](#1-the-problem-why-legacy-inheritance-fails)
 - [2. The Solution: Two-Tier Air-Gap Architecture](#2-the-solution-two-tier-air-gap-architecture)
 - [3. The 5 Non-Negotiable Security Invariants](#3-the-5-non-negotiable-security-invariants)
@@ -34,9 +62,9 @@
 - [8. Web Coordination & Localhost Deployment](#8-web-coordination--localhost-deployment)
 - [9. Threat Model & Lazarus Group Mitigation Runbook](#9-threat-model--lazarus-group-mitigation-runbook)
 - [10. Frequently Asked Questions (FAQ)](#10-frequently-asked-questions-faq)
-- [11. Audit Quality Gates & $250,000 Bug Bounty](#11-audit-quality-gates--250000-bug-bounty)
-- [12. Third-Party Security Audit](#12-third-party-security-audit)
-- [13. License](#13-license)
+- [11. Security Verification & Responsible Disclosure Policy](#11-security-verification--responsible-disclosure-policy)
+- [12. Pre-Launch Security Audit](#12-pre-launch-security-audit)
+- [13. License & Enterprise Dual-Licensing](#13-license--enterprise-dual-licensing)
 
 ---
 
@@ -325,32 +353,32 @@ Passwords and email links are vulnerable to credential stuffing, SIM swapping, a
 
 ---
 
-## 11. Audit Quality Gates & $250,000 Bug Bounty
+## 11. Security Verification & Responsible Disclosure Policy
 
-We operate an active, publicly funded Bug Bounty Program rewarding researchers up to **$250,000 USDC** for critical mathematical or architectural vulnerabilities.
+Security and cryptographic soundness are the core foundation of this project. If you discover a vulnerability or security flaw, please report it responsibly following our security guidelines:
 
-| Vulnerability Severity | Scope | Maximum Payout |
-|---|---|---|
-| **Critical** | Remote escrow share extraction without valid challenge completion | **$250,000 USDC** |
-| **High** | Clock-warp bypass of the 30-day challenge window | **$75,000 USDC** |
-| **Medium** | Merkle event chain collision or signature spoofing | **$25,000 USDC** |
-| **Low** | Rate limit bypass or non-sensitive metadata leak | **$5,000 USDC** |
-
-Review our audit runbooks before submission:
+Review our security runbooks:
 - [Threat Model Runbook](docs/THREAT_MODEL_RUNBOOK.md)
 - [Pre-Audit Checklist](docs/AUDIT_CHECKLIST.md)
 - [Security Disclosure Policy](SECURITY.md)
-- [Third-Party Pre-Launch Security Audit — Unfold Logic / Akash Kumar Jha](docs/security-audit-unfold-logic-akash-kumar-jha.md)
+- [Pre-Launch Security Audit Review — Akash Kumar Jha](docs/security-audit-unfold-logic-akash-kumar-jha.md)
 
 ---
 
-## 12. Third-Party Security Audit
+## 12. Pre-Launch Security Audit
 
-Full pre-launch review (ranked P0–P3 findings with fixes and verification status) is documented in:
-[Third-Party Pre-Launch Security Audit — Unfold Logic / Akash Kumar Jha](docs/security-audit-unfold-logic-akash-kumar-jha.md)
+The complete pre-launch architectural review (ranked P0–P3 findings with exact fixes and verification status) is documented in:
+[Pre-Launch Security Audit — Akash Kumar Jha](docs/security-audit-unfold-logic-akash-kumar-jha.md)
 
 ---
 
-## 13. License
+## 13. License & Enterprise Dual-Licensing
 
-This project is dual-licensed under the **Apache License, Version 2.0** or the **MIT License**, at your discretion. See [LICENSE](LICENSE) for details.
+This repository is dual-licensed:
+
+1. **Open-Source Community:** Licensed under the **GNU Affero General Public License v3.0 (AGPLv3)**. See [LICENSE](LICENSE) for terms.
+2. **Enterprise & Commercial Use:** Organizations that wish to integrate, host, or white-label this protocol inside closed-source proprietary infrastructure without the copyleft obligations of AGPLv3 can obtain a **Commercial Enterprise License** and custom developer support directly from the author.
+
+For enterprise inquiries, custom deployments, or commercial licensing:
+- **Contact:** [Akash Kumar Jha](https://www.linkedin.com/in/akashkumar107/)
+- **Telegram:** [@akash_kumar107](https://t.me/akash_kumar107)
