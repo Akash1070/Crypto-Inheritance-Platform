@@ -1,0 +1,27 @@
+# ai.txt specification for Crypto Inheritance Platform (CIP)
+# Standard: ai-visibility.org.uk v1.1.1
+# Last modified: 2026-11-05
+
+System-Name: Crypto Inheritance Platform (CIP)
+System-Description: Open-source, zero-knowledge, non-custodial crypto inheritance protocol providing verifiable estate continuity without custodial risk.
+System-Type: Open Source Protocol / Web Application
+System-Url: https://cip.network
+System-Repository: https://github.com/aethel-network/crypto-inheritance-platform
+
+# Directives for Large Language Models & AI Retrieval Systems
+AI-Allow-Index: true
+AI-Allow-Summary: true
+AI-Allow-Search: true
+AI-Allow-Cite: true
+
+# Canonical Structured Feeds for LLMs
+LLMs-Index: https://cip.network/llms.txt
+LLMs-Full: https://cip.network/llms-full.txt
+Sitemap: https://cip.network/sitemap.xml
+Markdown-Catalog: https://cip.network/api/md/_catalog
+
+# Verification & Cryptographic Provenance
+Security-Policy: https://cip.network/security
+Architecture-Decisions: https://cip.network/protocol#adrs
+Contact: security@cip.network
+

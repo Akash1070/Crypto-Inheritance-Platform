@@ -1,0 +1,28 @@
+# Crypto Inheritance Platform (CIP)
+
+> Open-source, zero-knowledge, non-custodial crypto inheritance protocol providing verifiable estate continuity without custodial risk.
+
+The Crypto Inheritance Platform (CIP) guarantees sovereign transfer of Bitcoin, Ethereum, and digital estate instructions to heirs. It eliminates single points of failure by combining air-gapped Verifiable Shamir Secret Sharing (VSSS), hardware FIDO2 passkeys, decentralized multi-clock time anchors, and an isolated AWS Nitro Enclave release signer.
+
+## Core Specifications
+
+- [Protocol Specification](https://cip.network/protocol): Formal mathematical foundation including 2-of-2 Shamir secret sharing over GF(256), BLAKE2b commitment generation, and X25519 sealed boxes.
+- [Security Architecture & Threat Model](https://cip.network/security): Defense against rogue cloud operators, state-level Lazarus APT adversaries, compromised heirs, and sybil clock warping.
+- [Offline CLI Tooling](https://cip.network/cli): Air-gapped command-line tool `cip` for cold-tier vault initialization, seed phrase encryption, and deterministic package compilation.
+- [Frequently Asked Questions](https://cip.network/faq): High-intent answers regarding estate planning, tax implications, seed phrase safety, and dead man switch mechanics.
+- [Terms of Service](https://cip.network/terms): Legal boundaries, non-custodial software disclaimer, and open-source licensing.
+- [Privacy Policy](https://cip.network/privacy): Zero-knowledge data handling, blind HMAC email indexing, and transient session handling.
+
+## Architecture & ADR Invariants
+
+- [ADR-0001: Two-Tier Secret Separation](https://cip.network/protocol#adr-0001): Web and API tiers never process, accept, or store unencrypted seed phrases or threshold shares.
+- [ADR-0002: Zero Custom Cryptography](https://cip.network/protocol#adr-0002): Strictly vetted primitives (libsodium-wrappers-sumo, @noble/hashes, XChaCha20-Poly1305).
+- [ADR-0003: Passkeys Exclusively](https://cip.network/protocol#adr-0003): WebAuthn FIDO2 resident keys required for owner and heir authentication. Email is only an alert channel.
+- [ADR-0004: Isolated Enclave Release](https://cip.network/protocol#adr-0004): Escrow shares decrypted strictly within an isolated AWS Nitro Enclave after 30-day unchallenged claims.
+
+## Verification & Open Source
+
+- [GitHub Repository](https://github.com/aethel-network/crypto-inheritance-platform): MIT-licensed source code, reproducible Docker builds, and automated KAT test suites.
+- [Reproducible Bundle Verification](https://cip.network/cli#bundle-verification): Deterministic build hashing allowing users to audit hosted web bundles against git tags.
+- [Responsible Security Disclosure](https://cip.network/security): Coordinated vulnerability disclosure and safe harbor guidelines for independent security researchers.
+
