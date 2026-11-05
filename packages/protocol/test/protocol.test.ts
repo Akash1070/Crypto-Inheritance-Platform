@@ -29,3 +29,4 @@ describe('Protocol Validation Schemas', () => {
     expect(EventTypeSchema.parse('CLAIM_STARTED')).toBe('CLAIM_STARTED');
   });
 });
+

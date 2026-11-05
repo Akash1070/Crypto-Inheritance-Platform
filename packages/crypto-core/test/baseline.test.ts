@@ -7,3 +7,4 @@ describe('Crypto Core Baseline', () => {
     expect(CIP_SUITE_ID).toBe(0x0001);
   });
 });
+

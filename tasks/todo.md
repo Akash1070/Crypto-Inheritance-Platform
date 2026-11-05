@@ -12,13 +12,14 @@
 - [x] Setup secret scanning (`.gitleaks.toml`) & vulnerability disclosure policy (`SECURITY.md`)
 - [x] Setup persistent AI agent rules (`AGENTS.md`)
 
-## Phase 1: Cryptographic Engine & Standalone CLI (`packages/crypto-core`, `packages/cli`)
-- [ ] Implement `crypto-core`: `XChaCha20-Poly1305` authenticated encryption with bound associated data
-- [ ] Implement `crypto-core`: Argon2id key derivation with mobile/desktop minimum constraints
-- [ ] Implement `crypto-core`: Verifiable Shamir Secret Sharing over $\text{GF}(2^8)$ with byte commitments
-- [ ] Implement `crypto-core`: X25519 sealed box key encapsulation for Heir and Enclave shares
-- [ ] Implement `packages/cli`: Offline CLI for vault creation, key splitting, and paper Heir Kit generation
-- [ ] Implement test suite: 100% coverage, KAT vectors, property fuzzing, and negative tests
+## Phase 1: Cryptographic Engine & Standalone CLI (`packages/crypto-core`, `packages/cli`) (COMPLETED)
+- [x] Implement `crypto-core`: `XChaCha20-Poly1305` authenticated encryption with bound associated data
+- [x] Implement `crypto-core`: Argon2id key derivation with mobile/desktop minimum constraints (>=32 MiB, >=3 iterations)
+- [x] Implement `crypto-core`: Verifiable Shamir Secret Sharing over $\text{GF}(256)$ with BLAKE2b share commitments
+- [x] Implement `crypto-core`: X25519 sealed box key encapsulation for Heir and Enclave shares
+- [x] Implement `crypto-core`: Versioned canonical vault envelope packaging (`CIP_VAULT`, version 1, suite 0x0001)
+- [x] Implement `packages/cli`: Offline CLI for vault creation, key splitting, share sealing, and paper Heir Kit generation
+- [x] Implement test suite: 100% line coverage, KAT vectors, property fuzzing, negative edge cases, and end-to-end offline recovery verification
 
 ## Phase 2: WebAuthn Passkeys & Identity (`apps/api`, `packages/protocol`)
 - [ ] Setup `@simplewebauthn/server` registration and assertion endpoints
