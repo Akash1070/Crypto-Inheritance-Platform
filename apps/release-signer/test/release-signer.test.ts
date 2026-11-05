@@ -1,4 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const TEST_TLS_CERT = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'cert.pem'), 'utf-8');
+const TEST_TLS_KEY = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'key.pem'), 'utf-8');
 import {
   verifyMultiClock,
   constructBeaconPayload,
@@ -377,15 +383,39 @@ describe('Isolated Release-Signer Enclave (@cip/release-signer)', () => {
       expect(res.error).toBeDefined();
     });
 
-    it('creates an isolated enclave HTTP server with healthcheck and hardened headers', async () => {
+    it('creates an isolated enclave mTLS server with healthcheck and hardened headers', async () => {
       const { createEnclaveServer } = await import('../src/server.js');
       const server = createEnclaveServer({
         enclaveKeyPair: enclaveBoxKey,
         releaseSigningKey: enclaveSigningKey,
-        serverSigningPublicKey: serverSigningKey.publicKey
+        serverSigningPublicKey: serverSigningKey.publicKey,
+        tls: { cert: TEST_TLS_CERT, key: TEST_TLS_KEY },
+        sharedSecret: 'test-shared-secret-0123456789abcdef'
       });
 
       expect(server).toBeDefined();
+    });
+
+    it('refuses to start without TLS or without a verified server public key', async () => {
+      const { createEnclaveServer } = await import('../src/server.js');
+
+      expect(() =>
+        createEnclaveServer({
+          enclaveKeyPair: enclaveBoxKey,
+          releaseSigningKey: enclaveSigningKey,
+          serverSigningPublicKey: serverSigningKey.publicKey,
+          sharedSecret: 'test-shared-secret-0123456789abcdef'
+        })
+      ).toThrow(/plaintext HTTP/);
+
+      expect(() =>
+        createEnclaveServer({
+          enclaveKeyPair: enclaveBoxKey,
+          releaseSigningKey: enclaveSigningKey,
+          tls: { cert: TEST_TLS_CERT, key: TEST_TLS_KEY },
+          sharedSecret: 'test-shared-secret-0123456789abcdef'
+        })
+      ).toThrow(/CIP_SERVER_SIGNING_PUBLIC_KEY_HEX/);
     });
 
     it('initializes deterministically with persistent keys across container restarts', async () => {

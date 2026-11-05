@@ -75,7 +75,9 @@ export type UpdateBlobRequest = z.infer<typeof UpdateBlobRequestSchema>;
 
 export const InitiateClaimRequestSchema = z.object({
   heirPubkey: z.string().regex(/^[0-9a-f]{64}$/i, 'Heir public key must be 32-byte hex string'),
-  stepUpToken: z.string().min(10)
+  timestamp: z.string().datetime(),
+  nonce: z.string().min(16).max(64),
+  claimSignature: z.string().regex(/^[0-9a-f]{128}$/i, 'Claim signature must be 64-byte Ed25519 signature hex')
 }).strict();
 
 export type InitiateClaimRequest = z.infer<typeof InitiateClaimRequestSchema>;

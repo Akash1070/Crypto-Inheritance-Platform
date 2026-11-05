@@ -1,0 +1,32 @@
+{
+  "name": "@cip/event-chain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Signed append-only Merkle event chains backed by Postgres for Crypto Inheritance Platform",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run",
+    "lint": "eslint src/ --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@cip/crypto-core": "workspace:*",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "@types/pg": "^8.23.1",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.7"
+  }
+}

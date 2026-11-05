@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: cip_admin
-      POSTGRES_PASSWORD: cip_dev_password_change_in_prod
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD to a strong unique value}
       POSTGRES_DB: cip_vaults
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -37,14 +37,13 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://cip_admin:cip_dev_password_change_in_prod@postgres:5432/cip_vaults
+      DATABASE_URL: postgresql://cip_admin:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/cip_vaults
       CIP_WEB_ORIGIN: http://localhost:8080
       CIP_EXPECTED_ORIGIN: http://localhost:8080
-      CIP_COOKIE_SECRET: cip-dev-cookie-secret-key-32bytes-must-be-rotated-for-production
+      CIP_COOKIE_SECRET: ${CIP_COOKIE_SECRET:?set CIP_COOKIE_SECRET to a strong unique value}
+      CIP_SERVER_SIGNING_KEY_HEX: ${CIP_SERVER_SIGNING_KEY_HEX:?set CIP_SERVER_SIGNING_KEY_HEX to a unique 32-byte hex secret}
       CIP_ENCLAVE_URL: http://release-signer:3001
-      CIP_SERVER_SIGNING_KEY_HEX: 4444444444444444444444444444444444444444444444444444444444444444
-    ports:
-      - "3000:3000"
+      CIP_TRUSTED_PROXY: "true"
     networks:
       - cip-internal
       - cip-public
@@ -68,7 +67,8 @@ services:
         condition: service_started
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://cip_admin:cip_dev_password_change_in_prod@postgres:5432/cip_vaults
+      DATABASE_URL: postgresql://cip_admin:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/cip_vaults
+      CIP_SERVER_SIGNING_KEY_HEX: ${CIP_SERVER_SIGNING_KEY_HEX:?set CIP_SERVER_SIGNING_KEY_HEX}
       CIP_WORKER_INTERVAL_MS: 30000
     networks:
       - cip-internal
@@ -76,7 +76,7 @@ services:
       - no-new-privileges:true
 
   # ============================================================================
-  # 4. Isolated Release-Signer Enclave (Multi-Clock Verified Escrow Release)
+  # 4. Isolated Release-Signer Enclave (mTLS, Multi-Clock Verified Escrow Release)
   # Zero outbound access: internal network only
   # ============================================================================
   release-signer:
@@ -88,9 +88,15 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      CIP_ENCLAVE_PRIVATE_KEY_HEX: 1111111111111111111111111111111111111111111111111111111111111111
-      CIP_RELEASE_SIGNING_KEY_HEX: 2222222222222222222222222222222222222222222222222222222222222222
-      CIP_SERVER_SIGNING_PUBLIC_KEY_HEX: d759793bbc13a2819a827c76adb6fba8a49aee007f49f2d0992d99b825ad2c48
+      CIP_ENCLAVE_PRIVATE_KEY_HEX: ${CIP_ENCLAVE_PRIVATE_KEY_HEX:?set CIP_ENCLAVE_PRIVATE_KEY_HEX to a unique 32-byte hex secret}
+      CIP_RELEASE_SIGNING_KEY_HEX: ${CIP_RELEASE_SIGNING_KEY_HEX:?set CIP_RELEASE_SIGNING_KEY_HEX to a unique 32-byte hex secret}
+      CIP_SERVER_SIGNING_PUBLIC_KEY_HEX: ${CIP_SERVER_SIGNING_PUBLIC_KEY_HEX:?set CIP_SERVER_SIGNING_PUBLIC_KEY_HEX}
+      CIP_RELEASE_SHARED_SECRET: ${CIP_RELEASE_SHARED_SECRET:?set CIP_RELEASE_SHARED_SECRET to a strong unique value}
+      CIP_TLS_CERT_FILE: /certs/enclave.crt
+      CIP_TLS_KEY_FILE: /certs/enclave.key
+      CIP_TLS_CA_FILE: /certs/api-ca.crt
+    volumes:
+      - ${CIP_TLS_CERT_DIR:-./certs}:/certs:ro
     networks:
       - cip-enclave-net
     security_opt:
@@ -125,4 +131,3 @@ networks:
 
 volumes:
   postgres_data:
-

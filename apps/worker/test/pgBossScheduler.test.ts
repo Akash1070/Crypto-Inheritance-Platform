@@ -43,6 +43,7 @@ describe('PgBossScheduler Transactional Job Scheduler', () => {
         const v = mockVaults.find((item) => item.id === id);
         if (v) v.state = state;
       }),
+      updateNotificationState: vi.fn().mockResolvedValue(undefined),
       logEvent: vi.fn().mockResolvedValue(undefined)
     };
 

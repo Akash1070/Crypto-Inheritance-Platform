@@ -1,14 +1,108 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:3000; img-src 'self' data:; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; require-trusted-types-for 'script';" />
-    <title>Crypto Inheritance Platform</title>
+    <meta name="theme-color" content="#090D16" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' http://localhost:3000 ws://localhost:5173 ws://127.0.0.1:5173 http://localhost:5173 http://10.113.26.44:5173; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'none'; form-action 'self';"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>Crypto Inheritance Platform (CIP) — Sovereign Estate Continuity</title>
+    <meta name="description" content="Open-source, zero-knowledge, non-custodial crypto inheritance protocol. Verifiable Shamir Secret Sharing, FIDO2 passkeys, and isolated enclaves for sovereign digital asset succession." />
+    <meta name="keywords" content="crypto inheritance, bitcoin inheritance, dead man switch, verifiable shamir secret sharing, passkeys, webauthn, zero-knowledge estate planning, nitro enclave" />
+    <meta name="author" content="Aethel Cryptographic Systems" />
+    <link rel="canonical" href="https://cip.network/" />
+    <link rel="alternate" type="text/markdown" href="https://cip.network/index.md" title="Markdown version of this page" />
+    <meta name="ai-summary" content="Open-source zero-knowledge non-custodial crypto inheritance protocol combining verifiable Shamir secret sharing, FIDO2 WebAuthn passkeys, and isolated Nitro enclaves." />
+
+    <!-- Open Graph / Search Metadata -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://cip.network/" />
+    <meta property="og:title" content="Crypto Inheritance Platform (CIP) — Sovereign Estate Continuity" />
+    <meta property="og:description" content="Open-source, zero-knowledge, non-custodial crypto inheritance protocol. Mathematical estate transfer without custodial risk." />
+    <meta property="og:image" content="https://cip.network/og-card.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Crypto Inheritance Platform (CIP)" />
+    <meta name="twitter:description" content="Zero-knowledge, non-custodial crypto inheritance protocol. Verifiable Shamir Secret Sharing & FIDO2 passkeys." />
+
+    <!-- Schema.org JSON-LD Graph for AI & Search Engines -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://cip.network/#organization",
+          "name": "Crypto Inheritance Protocol Working Group",
+          "url": "https://cip.network",
+          "logo": "https://cip.network/logo.png",
+          "sameAs": [
+            "https://github.com/aethel-network/crypto-inheritance-platform"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://cip.network/#website",
+          "url": "https://cip.network",
+          "name": "Crypto Inheritance Platform",
+          "publisher": { "@id": "https://cip.network/#organization" }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://cip.network/#application",
+          "name": "Crypto Inheritance Platform",
+          "applicationCategory": "SecurityApplication",
+          "operatingSystem": "All (Web, Linux, macOS, Windows)",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "description": "Zero-knowledge, non-custodial crypto inheritance protocol using air-gapped Verifiable Shamir Secret Sharing and WebAuthn passkeys."
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://cip.network/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Does CIP or anyone else have access to my private keys or seed phrase?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. Under ADR-0001 (Two-Tier Secret Separation), raw private keys and seed phrases are split cold on an air-gapped machine using the audited CLI. The web client and API servers never receive or store unencrypted threshold shares."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How does the platform know if I am alive?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The owner periodically taps a registered FIDO2 WebAuthn passkey to record a signed liveness proof. If the deadline expires without check-in, the vault enters REMINDING, then PENDING. An heir must pass passkey step-up to initiate a 30-day challenge window during which the owner can cancel with one biometric tap."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What prevents a rogue cloud administrator or hacker from stealing the escrow share?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The escrow share is sealed to an isolated AWS Nitro Enclave / Confidential VM public key. The database only holds sealed ciphertext. Only the enclave binary, verified by hardware PCR0 attestation, can decrypt the share after validating the 30-day Merkle event chain and signed Roughtime anchors."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
   </head>
-  <body class="bg-slate-950 text-slate-100 min-h-screen">
+  <body class="bg-[#090D16] text-slate-100 antialiased selection:bg-emerald-500/20 selection:text-emerald-300">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

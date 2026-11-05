@@ -1,11 +1,37 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { sha256Hex } from '@cip/crypto-core';
+import {
+  sha256Hex,
+  deriveSigningKeyPairFromPrivate,
+  signHash,
+  verifySignature
+} from '@cip/crypto-core';
 
 export interface VerifyBundleOptions {
   dir: string;
   manifest?: string;
   generate?: boolean;
+  sign?: boolean;
+  privateKeyFile?: string;
+  publicKeyFile?: string;
+}
+
+function canonicalManifestJson(manifest: BundleManifest): string {
+  return JSON.stringify(manifest);
+}
+
+async function readKeyHexFile(filePath: string, name: string): Promise<Buffer> {
+  let raw: string;
+  try {
+    raw = (await fs.readFile(filePath, 'utf-8')).trim();
+  } catch {
+    throw new Error(`Unable to read ${name} file: ${filePath}`);
+  }
+  const hex = raw.match(/[0-9a-f]{64}/i)?.[0];
+  if (!hex) {
+    throw new Error(`${name} file must contain a 32-byte hex seed`);
+  }
+  return Buffer.from(hex, 'hex');
 }
 
 export interface BundleManifestEntry {
@@ -72,8 +98,25 @@ export async function verifyBundleAction(options: VerifyBundleOptions): Promise<
     ? path.resolve(options.manifest)
     : path.join(bundleDir, 'checksums.json');
 
+  let manifest: BundleManifest;
+
   if (options.generate) {
-    const manifest = await generateManifest(bundleDir, manifestPath);
+    manifest = await generateManifest(bundleDir, manifestPath);
+
+    if (options.sign) {
+      if (!options.privateKeyFile) {
+        throw new Error('--sign requires --private-key-file');
+      }
+      const seed = await readKeyHexFile(options.privateKeyFile, 'private key');
+      const keyPair = await deriveSigningKeyPairFromPrivate(seed);
+      const canonical = canonicalManifestJson(manifest);
+      const hashBytes = Buffer.from(sha256Hex(canonical), 'hex');
+      const signature = await signHash(hashBytes, keyPair.privateKey);
+      const sigPath = `${manifestPath}.sig`;
+      await fs.writeFile(sigPath, Buffer.from(signature).toString('hex') + '\n', 'utf-8');
+      console.log(` Manifest signed with Ed25519. Signature: ${sigPath}`);
+    }
+
     console.log(` Bundle manifest generated successfully.`);
     console.log(` Target directory: ${bundleDir}`);
     console.log(` Manifest path:    ${manifestPath}`);
@@ -89,7 +132,26 @@ export async function verifyBundleAction(options: VerifyBundleOptions): Promise<
     throw new Error(`Manifest not found at "${manifestPath}". Run with --generate or specify valid --manifest.`);
   }
 
-  const manifest = JSON.parse(manifestRaw) as BundleManifest;
+  manifest = JSON.parse(manifestRaw) as BundleManifest;
+
+  if (options.publicKeyFile) {
+    const sigPath = `${manifestPath}.sig`;
+    let signatureHex: string;
+    try {
+      signatureHex = (await fs.readFile(sigPath, 'utf-8')).trim();
+    } catch {
+      throw new Error(`Manifest signature not found at "${sigPath}". Sign the manifest at release time with --sign.`);
+    }
+    const publicKey = await readKeyHexFile(options.publicKeyFile, 'public key');
+    const canonical = canonicalManifestJson(manifest);
+    const hashBytes = Buffer.from(sha256Hex(canonical), 'hex');
+    const valid = await verifySignature(Buffer.from(signatureHex, 'hex'), hashBytes, publicKey);
+    if (!valid) {
+      throw new Error('Manifest signature verification FAILED. The manifest is not trusted.');
+    }
+    console.log(' Manifest signature verified (Ed25519).');
+  }
+
   const onDiskFiles = await scanDirectory(bundleDir);
   const manifestFiles = Object.keys(manifest);
 

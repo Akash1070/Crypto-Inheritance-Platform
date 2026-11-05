@@ -72,6 +72,9 @@ export function createCli(): Command {
     .requiredOption('-d, --dir <dir>', 'Path to web bundle directory (e.g. apps/web/dist)')
     .option('-m, --manifest <path>', 'Path to checksums.json manifest (defaults to <dir>/checksums.json)')
     .option('-g, --generate', 'Generate checksums.json manifest for the specified directory')
+    .option('--sign', 'Sign the generated manifest with an Ed25519 key (requires --private-key-file)')
+    .option('--private-key-file <path>', 'Path to a 32-byte hex Ed25519 seed used to sign the manifest')
+    .option('--public-key-file <path>', 'Path to a 32-byte hex Ed25519 public key used to verify the manifest signature')
     .action(verifyBundleAction);
 
   return program;

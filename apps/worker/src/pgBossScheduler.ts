@@ -15,6 +15,7 @@ export const QUEUE_CHALLENGE_EXPIRY = 'cip-challenge-expiry';
 export interface VaultProvider {
   getActiveVaults(): Promise<WorkerVault[]>;
   updateVaultState(vaultId: string, newState: string): Promise<void>;
+  updateNotificationState(vaultId: string, tier: string, sentAt: Date): Promise<void>;
   logEvent(vaultId: string, type: string, payload: Record<string, unknown>): Promise<void>;
 }
 
@@ -94,6 +95,7 @@ export class PgBossScheduler {
         const msg = buildNotificationMessage(vault, tier, now);
         if (msg) {
           await this.boss.send(QUEUE_DISPATCH_NOTIFICATION, msg);
+          await this.vaultProvider.updateNotificationState(vault.id, tier, now);
           vault.lastNotificationTier = tier;
           vault.lastNotificationSentAt = now;
         }

@@ -1,0 +1,50 @@
+# robots.txt for Crypto Inheritance Platform (CIP)
+# https://github.com/aethel-network/crypto-inheritance-platform
+
+User-agent: *
+Allow: /
+Allow: /protocol
+Allow: /security
+Allow: /cli
+Allow: /faq
+Allow: /terms
+Allow: /privacy
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /ai.txt
+Disallow: /api/
+Disallow: /vaults/
+Disallow: /auth/
+
+# Explicitly Authorize AI & Search Crawlers (AEO / GEO Engine)
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+Sitemap: https://cip.network/sitemap.xml

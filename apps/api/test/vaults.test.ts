@@ -4,6 +4,19 @@ import { authStore } from '../src/auth/store.js';
 import { vaultStore } from '../src/vaults/store.js';
 import { eventChainManager } from '../src/events/hashChain.js';
 import { getServerSigningKey } from '../src/routes/vaults.js';
+import { generateSigningKeyPair, signHash } from '@cip/crypto-core';
+import type { SigningKeyPair } from '@cip/crypto-core';
+
+async function buildHeirClaimSignature(
+  heirKey: SigningKeyPair,
+  vaultId: string,
+  timestamp: string,
+  nonce: string
+): Promise<string> {
+  const canonicalMessage = `CIP_CLAIM:v1:${vaultId}:${Buffer.from(heirKey.publicKey).toString('hex')}:${timestamp}:${nonce}`;
+  const signature = await signHash(new TextEncoder().encode(canonicalMessage), heirKey.privateKey);
+  return Buffer.from(signature).toString('hex');
+}
 
 describe('Vault Coordination API & Tamper-Proof Event Chaining', () => {
   let app: Awaited<ReturnType<typeof buildApp>>;
@@ -326,11 +339,10 @@ describe('Vault Coordination API & Tamper-Proof Event Chaining', () => {
   });
 
   describe('Heir Claim Initiation & Owner Cancellation API', () => {
-    it('handles the complete claim and owner cancellation lifecycle with step-up verification', async () => {
-      // Create user B as heir
-      const userHeir = await authStore.createUser('heir_bob', 'bob@example.com');
-      const heirSession = await authStore.createSession(userHeir.id);
-      const heirCookie = `cip-session=${heirSession.id}`;
+    it('handles the complete claim and owner cancellation lifecycle with heir-signature verification', async () => {
+      // Heir holds an Ed25519 keypair (offline, never server-side)
+      const heirKey = await generateSigningKeyPair();
+      const heirPubkey = Buffer.from(heirKey.publicKey).toString('hex');
 
       // Create vault under user A
       const createRes = await app.inject({
@@ -346,7 +358,6 @@ describe('Vault Coordination API & Tamper-Proof Event Chaining', () => {
       const { vaultId } = JSON.parse(createRes.payload);
 
       // Register heir on vault
-      const heirPubkey = '33'.repeat(32);
       const addHeirStepUp = await authStore.createStepUpToken(userA.id, 'ADD_HEIR');
       const addHeirRes = await app.inject({
         method: 'POST',
@@ -364,14 +375,17 @@ describe('Vault Coordination API & Tamper-Proof Event Chaining', () => {
       expect(addHeirRes.statusCode).toBe(201);
 
       // 1. Heir attempt to claim while ACTIVE fails
-      const claimStepUp1 = await authStore.createStepUpToken(userHeir.id, 'INITIATE_CLAIM');
+      const prematureTimestamp = new Date().toISOString();
+      const prematureNonce = 'premature-nonce-001';
+      const prematureSign = await buildHeirClaimSignature(heirKey, vaultId, prematureTimestamp, prematureNonce);
       const prematureClaimRes = await app.inject({
         method: 'POST',
         url: `/vaults/${vaultId}/claim`,
-        headers: { cookie: heirCookie },
         payload: {
           heirPubkey,
-          stepUpToken: claimStepUp1
+          timestamp: prematureTimestamp,
+          nonce: prematureNonce,
+          claimSignature: prematureSign
         }
       });
       expect(prematureClaimRes.statusCode).toBe(400);
@@ -380,21 +394,38 @@ describe('Vault Coordination API & Tamper-Proof Event Chaining', () => {
       // 2. Transition vault to PENDING (e.g. interval + grace elapsed)
       await vaultStore.updateVaultState(vaultId, 'PENDING');
 
-      // 3. Heir claims with step-up token
-      const claimStepUp2 = await authStore.createStepUpToken(userHeir.id, 'INITIATE_CLAIM');
+      // 3. Heir claims with a valid signature
+      const validTimestamp = new Date().toISOString();
+      const validNonce = 'valid-claim-nonce-002';
+      const validSign = await buildHeirClaimSignature(heirKey, vaultId, validTimestamp, validNonce);
       const validClaimRes = await app.inject({
         method: 'POST',
         url: `/vaults/${vaultId}/claim`,
-        headers: { cookie: heirCookie },
         payload: {
           heirPubkey,
-          stepUpToken: claimStepUp2
+          timestamp: validTimestamp,
+          nonce: validNonce,
+          claimSignature: validSign
         }
       });
       expect(validClaimRes.statusCode).toBe(200);
       const claimBody = JSON.parse(validClaimRes.payload);
       expect(claimBody.state).toBe('CHALLENGE');
       expect(claimBody.challengeExpiresAt).toBeDefined();
+
+      // 3b. Replay of the same signed claim is rejected
+      const replayRes = await app.inject({
+        method: 'POST',
+        url: `/vaults/${vaultId}/claim`,
+        payload: {
+          heirPubkey,
+          timestamp: validTimestamp,
+          nonce: validNonce,
+          claimSignature: validSign
+        }
+      });
+      expect(replayRes.statusCode).toBe(403);
+      expect(JSON.parse(replayRes.payload).error).toBe('REPLAYED_CLAIM');
 
       // 4. Owner receives challenge notification and immediately cancels via passkey assertion
       const cancelStepUp = await authStore.createStepUpToken(userA.id, 'CANCEL_CLAIM');

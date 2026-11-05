@@ -6,3 +6,4 @@
 export * from './vault.js';
 export * from './events.js';
 export * from './auth.js';
+export * from './secrets.js';

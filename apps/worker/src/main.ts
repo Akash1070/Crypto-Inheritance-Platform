@@ -2,6 +2,16 @@ import { BackgroundScheduler } from './scheduler.js';
 import { ConsoleNotificationDispatcher } from './notifications.js';
 import { PgBossScheduler } from './pgBossScheduler.js';
 import { PostgresVaultProvider } from './postgresProvider.js';
+import { PgEventChainStore } from '@cip/event-chain';
+import { deriveSigningKeyPairFromPrivate } from '@cip/crypto-core';
+import { assertStrongHexSecret } from '@cip/protocol';
+import pg from 'pg';
+
+function loadSigningKey() {
+  const keyHex = process.env['CIP_SERVER_SIGNING_KEY_HEX'];
+  assertStrongHexSecret(keyHex, 'CIP_SERVER_SIGNING_KEY_HEX', 32);
+  return deriveSigningKeyPairFromPrivate(Buffer.from(keyHex!, 'hex'));
+}
 
 export async function startWorker() {
   console.log('[CIP Worker] Starting Background Scheduler daemon...');
@@ -11,7 +21,10 @@ export async function startWorker() {
   let provider: PostgresVaultProvider | null = null;
   if (dbUrl) {
     try {
-      provider = new PostgresVaultProvider(dbUrl);
+      const signingKey = await loadSigningKey();
+      const pool = new pg.Pool({ connectionString: dbUrl });
+      const eventStore = new PgEventChainStore(pool);
+      provider = new PostgresVaultProvider(dbUrl, eventStore, signingKey);
       console.log('[CIP Worker] Initializing Postgres-backed transactional scheduler (pg-boss)...');
       const pgBossScheduler = new PgBossScheduler({
         connectionString: dbUrl,
@@ -28,7 +41,6 @@ export async function startWorker() {
     }
   }
 
-  // Standalone interval scheduler
   const scheduler = new BackgroundScheduler(dispatcher);
   const intervalMs = Number(process.env['CIP_WORKER_INTERVAL_MS']) || 60000;
   console.log(`[CIP Worker] Standalone polling cycle configured for every ${intervalMs}ms.`);
@@ -44,8 +56,16 @@ export async function startWorker() {
             await provider.updateVaultState(item.vaultId, item.currentState);
             await provider.logEvent(item.vaultId, item.currentState, {
               from: item.previousState,
-              to: item.currentState
+              to: item.currentState,
+              timestamp: now.toISOString()
             });
+          }
+        }
+      }
+      if (provider && result.notificationsSent > 0) {
+        for (const item of result.details) {
+          if (item.notificationDispatched) {
+            await provider.updateNotificationState(item.vaultId, item.notificationDispatched, now);
           }
         }
       }

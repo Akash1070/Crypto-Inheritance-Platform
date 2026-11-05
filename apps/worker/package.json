@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@cip/crypto-core": "workspace:*",
+    "@cip/event-chain": "workspace:*",
     "@cip/protocol": "workspace:*",
     "pg": "^8.23.1",
     "pg-boss": "^12.38.0"

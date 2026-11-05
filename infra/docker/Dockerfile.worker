@@ -12,11 +12,13 @@ RUN corepack enable && corepack prepare pnpm@10.5.2 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json ./
 COPY packages/protocol ./packages/protocol
 COPY packages/crypto-core ./packages/crypto-core
+COPY packages/event-chain ./packages/event-chain
 COPY apps/worker ./apps/worker
 
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @cip/protocol build
 RUN pnpm --filter @cip/crypto-core build
+RUN pnpm --filter @cip/event-chain build
 RUN pnpm --filter @cip/worker build
 
 FROM node:22-alpine AS runner
@@ -34,6 +36,8 @@ COPY --from=builder --chown=node:node /app/packages/protocol/dist ./packages/pro
 COPY --from=builder --chown=node:node /app/packages/protocol/package.json ./packages/protocol/package.json
 COPY --from=builder --chown=node:node /app/packages/crypto-core/dist ./packages/crypto-core/dist
 COPY --from=builder --chown=node:node /app/packages/crypto-core/package.json ./packages/crypto-core/package.json
+COPY --from=builder --chown=node:node /app/packages/event-chain/dist ./packages/event-chain/dist
+COPY --from=builder --chown=node:node /app/packages/event-chain/package.json ./packages/event-chain/package.json
 COPY --from=builder --chown=node:node /app/apps/worker/dist ./apps/worker/dist
 COPY --from=builder --chown=node:node /app/apps/worker/package.json ./apps/worker/package.json
 

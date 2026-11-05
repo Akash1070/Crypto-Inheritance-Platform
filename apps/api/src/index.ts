@@ -3,12 +3,31 @@ import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
+import { assertStrongSecret } from '@cip/protocol';
 import { authRoutes } from './routes/auth.js';
 import { vaultRoutes } from './routes/vaults.js';
+import { markdownRoutes } from './routes/markdown.js';
+import { hasDatabase, ensureDatabase } from './db/index.js';
+
+function assertBootSecrets() {
+  if (process.env['NODE_ENV'] === 'production') {
+    assertStrongSecret(process.env['CIP_COOKIE_SECRET'], 'CIP_COOKIE_SECRET');
+    if (!hasDatabase()) {
+      throw new Error('DATABASE_URL is required in production');
+    }
+  }
+}
 
 export async function buildApp() {
+  assertBootSecrets();
+
+  if (hasDatabase()) {
+    await ensureDatabase();
+  }
+
   const app = Fastify({
-    trustProxy: true,
+    trustProxy: process.env['CIP_TRUSTED_PROXY'] === 'true',
+    bodyLimit: 1_048_576,
     logger: {
       redact: ['req.headers.authorization', 'req.headers.cookie']
     }
@@ -39,8 +58,13 @@ export async function buildApp() {
     credentials: true
   });
 
+  const cookieSecret = process.env['CIP_COOKIE_SECRET'] || 'cip-local-dev-cookie-secret';
+  if (process.env['NODE_ENV'] === 'production' && !process.env['CIP_COOKIE_SECRET']) {
+    throw new Error('CIP_COOKIE_SECRET is required in production');
+  }
+
   await app.register(cookie, {
-    secret: process.env['CIP_COOKIE_SECRET'] || 'cip-super-secret-local-dev-key-must-be-changed-in-prod-32bytes',
+    secret: cookieSecret,
     parseOptions: {}
   });
 
@@ -58,6 +82,9 @@ export async function buildApp() {
 
   // Register Vault Coordination Routes
   await app.register(vaultRoutes, { prefix: '/vaults' });
+
+  // Register SEO / AEO / GEO Markdown Routes
+  await app.register(markdownRoutes);
 
   return app;
 }

@@ -1,0 +1,148 @@
+# Crypto Inheritance Platform (CIP) — Full Protocol Documentation
+
+> Zero-Knowledge, Non-Custodial Estate Planning & Inheritance Protocol for Digital Assets.
+
+Canonical: https://cip.network/llms-full.txt
+Last updated: 2026-11-05
+
+---
+
+## 1. Executive Summary
+
+The Crypto Inheritance Platform (CIP) solves the multi-billion-dollar problem of lost crypto assets due to owner incapacitation or death. Existing solutions either require handing raw keys to custodial intermediaries (Coinbase, custodians, centralized dead-man switches) or rely on smart contracts that leak sensitive wallet balances, addresses, and estate plans on-chain.
+
+CIP is an open-source, non-custodial, zero-knowledge coordination platform that enforces:
+1. **Zero Knowledge:** The server, API, and web interface NEVER receive or store unencrypted seed phrases, private keys, or plaintext threshold shares.
+2. **Air-Gapped Cold Splitting:** The owner's master secret (BIP-39 mnemonic, private key, or estate instructions) is encrypted and split entirely offline using the `cip` CLI on an air-gapped machine.
+3. **Verifiable Shamir Secret Sharing:** Master vault key VK is split into a 2-of-2 threshold scheme ($H$ and $S$) over $\text{GF}(256)$ with BLAKE2b polynomial commitments to prevent rogue share tampering.
+4. **Isolated Enclave Release Signer:** Escrow share $S$ is sealed to an isolated hardware enclave key (AWS Nitro Enclave / Confidential VM). The enclave only decrypts $S$ if a heir passes passkey step-up authentication, a 30-day challenge window elapses, the signed Merkle event chain has zero owner cancellations, and multi-clock Roughtime anchors confirm time progress.
+5. **FIDO2 WebAuthn Passkeys:** Authentication is phishing-resistant, origin-bound, and requires biometric hardware presence. No passwords, SMS codes, or magic login links exist.
+
+---
+
+## 2. Architecture & The Two-Tier Model
+
+### Tier 1: Cold Execution Tier (`packages/crypto-core`, `packages/cli`)
+- Operates strictly offline on air-gapped hardware or ephemeral live USB environments.
+- Generates 256-bit symmetric vault keys ($VK$).
+- Encrypts the estate package (BIP-39 seed phrase, hardware wallet PINs, multi-sig policies, heir letters) using XChaCha20-Poly1305.
+- Computes Verifiable Shamir Split:
+  - $f(0) = VK$
+  - $f(1) = H$ (Heir share)
+  - $f(2) = S$ (Escrow server share)
+- Computes BLAKE2b commitment hash: $C = \text{BLAKE2b}(VK \parallel \text{salt})$.
+- Seals Heir share $H$ with heir's X25519 public key.
+- Seals Escrow share $S$ with enclave's X25519 public key.
+- Emits an encrypted, sealed package file `cip-vault-bundle.json`.
+
+### Tier 2: Coordination Tier (`apps/web`, `apps/api`)
+- Web dashboard and Fastify REST backend.
+- Receives ONLY the sealed escrow share, sealed heir share, encrypted vault blob reference, and metadata.
+- Coordinates liveness check-ins (e.g. 180-day interval).
+- Dispatches escalating alerts (email notifications, SMS, trusted contacts) via transactional scheduler (`pg-boss`).
+- Appends all state transitions to a tamper-proof Ed25519 Merkle event chain.
+- Contains ZERO cryptographic keys capable of decrypting vault contents.
+
+### Tier 3: Isolated Release Enclave (`apps/release-signer`)
+- Runs in an AWS Nitro Enclave or GCP Confidential VM with zero internet ingress/egress.
+- Communicates only over internal unix vsock / mTLS with the API gateway.
+- Holds the enclave private key in volatile memory only.
+- Performs Multi-Clock Verification: compares system RTC with multiple signed cryptographic Roughtime attestations to prevent hypervisor clock-warp attacks.
+- Validates the complete Merkle chain: sequence numbers, SHA-256 payload hashes, previous hash linkage, and signatures.
+- Verifies:
+  - Valid `PENDING` state event.
+  - Valid `CLAIM_STARTED` event signed by registered heir passkey.
+  - Elapsed duration $\ge 30$ days (or configured challenge window).
+  - Absence of any `CHECKIN` or `CLAIM_CANCELLED` events.
+- Decrypts $S$, immediately re-encrypts $S$ directly to the Heir's public key ($\text{Sealed}_H(S)$), logs an immutable `RELEASE_COMPLETED` audit event, and zeroes memory.
+
+---
+
+## 3. Cryptographic Primitives
+
+CIP complies strictly with ADR-0002 ("No Homemade Cryptography"):
+- **Symmetric Encryption:** XChaCha20-Poly1305 authenticated encryption with 24-byte random nonces and authenticated associated data (AAD).
+- **Public Key Sealing:** X25519 + XSalsa20-Poly1305 anonymous sealed boxes (`crypto_box_seal`).
+- **Secret Sharing:** Shamir's Secret Sharing over Galois Field $\text{GF}(256)$ with polynomial commitments.
+- **Hashing & Commitments:** BLAKE2b-256 and SHA-256.
+- **Signatures & Chains:** Ed25519 digital signatures and SHA-256 Merkle chain linkages.
+- **Key Derivation:** Argon2id (memory-hard KDF) for backup mnemonic recovery kit derivation.
+
+---
+
+## 4. State Machine & Escalating Alert Pipeline
+
+A vault cycles through four deterministic states:
+
+```
+[ ACTIVE ] ──(Check-in deadline passed)──> [ REMINDING ]
+    │                                            │
+ (Check-in)                                 (Check-in)
+    │                                            │
+    ▼                                            ▼
+[ ACTIVE ] <─────────────────────────────────────┘
+    │
+    └──(Grace period elapsed)──> [ PENDING ]
+                                     │
+                             (Heir Claims)
+                                     │
+                                     ▼
+                               [ CHALLENGE ] ──(Owner asserts passkey)──> [ ACTIVE ]
+                                     │
+                        (30 days unchallenged)
+                                     │
+                                     ▼
+                             [ RELEASED (Enclave releases Sealed_H(S)) ]
+```
+
+### Escalating Alert Cadence:
+- **T - 30 days:** Friendly email reminder and web dashboard alert.
+- **T - 14 days:** High-priority email and WebPush notification.
+- **T - 7 days:** Escalation notice to trusted emergency contacts ("Check on your friend").
+- **Grace Period (T to T + 30 days):** Urgent multi-channel warning notices.
+- **Challenge Window (30 days after Heir claim):** Red alert sent every 72 hours across all communication rails. Any single passkey assertion by the owner immediately resets the vault to ACTIVE and burns the claim.
+
+---
+
+## 5. Offline CLI Command Reference
+
+The `cip` CLI runs on Node.js / Bun on an air-gapped machine:
+
+```bash
+# Initialize a new encrypted inheritance vault
+cip init-vault \
+  --secret "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about" \
+  --heir-pubkey <heir_x25519_public_key> \
+  --enclave-pubkey <enclave_x25519_public_key> \
+  --out cip-vault-bundle.json
+
+# Verify integrity and polynomial commitment of a bundle
+cip verify-bundle --bundle cip-vault-bundle.json
+
+# Heir recovery ceremony (once Sealed_H(S) is released)
+cip reconstruct \
+  --heir-privkey <heir_x25519_private_key> \
+  --sealed-heir-share <sealed_h> \
+  --sealed-escrow-share <sealed_s> \
+  --encrypted-blob <ciphertext_hex>
+```
+
+---
+
+## 6. Threat Model & Mitigation Matrix
+
+| Threat Category | Attack Vector | CIP Architectural Mitigation |
+| :--- | :--- | :--- |
+| **Rogue Cloud Operator** | Malicious DB admin accesses all database tables | Escrow share $S$ is sealed with enclave public key; DB holds only ciphertext. Server cannot decrypt. |
+| **Compromised Heir** | Rogue heir attempts premature asset theft | 30-day mandatory challenge window; owner receives multi-channel alerts and cancels with 1 tap. |
+| **Clock-Warp Attack** | Hypervisor admin winds system clock forward by 30 days | Enclave cross-verifies RTC against external signed Roughtime attestations before executing release. |
+| **Phishing & SIM-Swap** | Attacker intercepts SMS or clones session cookies | WebAuthn FIDO2 passkeys are origin-bound and cryptographically signed; no passwords exist. |
+| **Rogue Enclave Build** | Attacker compromises CI pipeline to inject malicious binary | Reproducible Docker builds; client verifies PCR0 measurement against published audit attestation. |
+
+---
+
+## 7. Open Source License & Contact
+
+- **License:** MIT License. Free for sovereign individuals, family offices, and developers.
+- **Repository:** https://github.com/aethel-network/crypto-inheritance-platform
+- **Security Disclosures:** security@cip.network (PGP Key available in SECURITY.md).

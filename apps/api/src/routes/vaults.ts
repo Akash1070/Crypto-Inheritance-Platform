@@ -5,11 +5,13 @@ import {
   UpdateBlobRequestSchema,
   InitiateClaimRequestSchema,
   CancelClaimRequestSchema,
-  BANNED_SECRET_KEYS
+  BANNED_SECRET_KEYS,
+  assertStrongHexSecret
 } from '@cip/protocol';
 import {
   generateSigningKeyPair,
   deriveSigningKeyPairFromPrivate,
+  verifySignature,
   SigningKeyPair
 } from '@cip/crypto-core';
 import { vaultStore } from '../vaults/store.js';
@@ -23,7 +25,11 @@ let serverSigningKey: SigningKeyPair | null = null;
 export async function getServerSigningKey(): Promise<SigningKeyPair> {
   if (!serverSigningKey) {
     const keyHex = process.env['CIP_SERVER_SIGNING_KEY_HEX'];
+    if (process.env['NODE_ENV'] === 'production') {
+      assertStrongHexSecret(keyHex, 'CIP_SERVER_SIGNING_KEY_HEX', 32);
+    }
     if (keyHex) {
+      assertStrongHexSecret(keyHex, 'CIP_SERVER_SIGNING_KEY_HEX', 32);
       serverSigningKey = await deriveSigningKeyPairFromPrivate(Buffer.from(keyHex, 'hex'));
     } else {
       serverSigningKey = await generateSigningKeyPair();
@@ -33,8 +39,13 @@ export async function getServerSigningKey(): Promise<SigningKeyPair> {
 }
 
 export const vaultRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  // Pre-handler hook to authenticate session on all vault routes
+  // Pre-handler hook to authenticate session on all vault routes.
+  // POST /vaults/:id/claim is heir-authenticated (Ed25519 signature) and must NOT require an owner session.
   fastify.addHook('preHandler', async (request, reply) => {
+    if (request.method === 'POST' && /\/claim$/.test(request.url)) {
+      return;
+    }
+
     const sessionId = getSessionIdFromRequest(request);
     if (!sessionId) {
       return reply.status(401).send({ error: 'UNAUTHORIZED', message: 'Missing session cookie' });
@@ -262,10 +273,13 @@ export const vaultRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
     if (!vault || vault.ownerId !== userId) {
       return reply.status(404).send({ error: 'VAULT_NOT_FOUND' });
     }
+    if (vault.state === 'CHALLENGE' || vault.state === 'PAUSED') {
+      return reply.status(409).send({ error: 'VAULT_STATE_TRANSITION_FORBIDDEN', message: `Vault cannot be paused from state ${vault.state}` });
+    }
 
-    const updated = await vaultStore.updateVaultState(vault.id, 'PAUSED');
+    const updated = await vaultStore.pauseVault(vault.id);
     if (!updated) {
-      return reply.status(404).send({ error: 'VAULT_NOT_FOUND' });
+      return reply.status(409).send({ error: 'VAULT_STATE_TRANSITION_FORBIDDEN' });
     }
     const signingKey = await getServerSigningKey();
     await eventChainManager.appendEvent(vault.id, 'VAULT_PAUSED', { pausedAt: new Date().toISOString() }, signingKey);
@@ -281,10 +295,13 @@ export const vaultRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
     if (!vault || vault.ownerId !== userId) {
       return reply.status(404).send({ error: 'VAULT_NOT_FOUND' });
     }
+    if (vault.state !== 'PAUSED') {
+      return reply.status(409).send({ error: 'VAULT_STATE_TRANSITION_FORBIDDEN', message: `Only paused vaults can be resumed (current: ${vault.state})` });
+    }
 
-    const updated = await vaultStore.updateVaultState(vault.id, 'ACTIVE');
+    const updated = await vaultStore.resumeVault(vault.id);
     if (!updated) {
-      return reply.status(404).send({ error: 'VAULT_NOT_FOUND' });
+      return reply.status(409).send({ error: 'VAULT_STATE_TRANSITION_FORBIDDEN' });
     }
     const signingKey = await getServerSigningKey();
     await eventChainManager.appendEvent(vault.id, 'VAULT_RESUMED', { resumedAt: new Date().toISOString() }, signingKey);
@@ -377,9 +394,16 @@ export const vaultRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
     return reply.send(verification);
   });
 
-  // 11. Initiate Heir Claim (Requires Step-Up Token)
+  // 11. Initiate Heir Claim (Authenticated by heir Ed25519 signature over canonical claim message)
+  const claimNonces = new Map<string, number>();
+
+  function pruneClaimNonces(nowMs: number) {
+    for (const [nonce, expiresAt] of claimNonces.entries()) {
+      if (expiresAt < nowMs) claimNonces.delete(nonce);
+    }
+  }
+
   fastify.post('/:id/claim', async (request, reply) => {
-    const userId = request.userId!;
     const { id } = request.params as { id: string };
 
     const parseResult = InitiateClaimRequestSchema.safeParse(request.body);
@@ -387,10 +411,18 @@ export const vaultRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
       return reply.status(400).send({ error: 'INVALID_REQUEST', details: parseResult.error.format() });
     }
 
-    const { heirPubkey, stepUpToken } = parseResult.data;
-    const consumedUserId = await authStore.verifyAndConsumeStepUpToken(stepUpToken, 'INITIATE_CLAIM');
-    if (!consumedUserId || consumedUserId !== userId) {
-      return reply.status(403).send({ error: 'STEP_UP_REQUIRED', message: 'Valid step-up token required to initiate claim' });
+    const { heirPubkey, timestamp, nonce, claimSignature } = parseResult.data;
+
+    const nowMs = Date.now();
+    const claimTs = new Date(timestamp).getTime();
+    if (Number.isNaN(claimTs) || Math.abs(nowMs - claimTs) > 5 * 60 * 1000) {
+      return reply.status(403).send({ error: 'STALE_CLAIM_SIGNATURE', message: 'Claim signature timestamp is outside the freshness window' });
+    }
+
+    pruneClaimNonces(nowMs);
+    const nonceKey = `${id}:${nonce}`;
+    if (claimNonces.has(nonceKey)) {
+      return reply.status(403).send({ error: 'REPLAYED_CLAIM', message: 'Claim nonce has already been used' });
     }
 
     const vault = await vaultStore.getVaultById(id);
@@ -403,6 +435,18 @@ export const vaultRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
     if (!heir) {
       return reply.status(403).send({ error: 'HEIR_NOT_AUTHORIZED', message: 'Heir public key not registered on this vault' });
     }
+
+    const canonicalMessage = `CIP_CLAIM:v1:${vault.id}:${heirPubkey}:${timestamp}:${nonce}`;
+    const signatureValid = await verifySignature(
+      Buffer.from(claimSignature, 'hex'),
+      new TextEncoder().encode(canonicalMessage),
+      Buffer.from(heirPubkey, 'hex')
+    );
+    if (!signatureValid) {
+      return reply.status(403).send({ error: 'INVALID_CLAIM_SIGNATURE', message: 'Heir claim signature verification failed' });
+    }
+
+    claimNonces.set(nonceKey, nowMs + 10 * 60 * 1000);
 
     try {
       const updated = await vaultStore.initiateClaim(vault.id, heirPubkey);
