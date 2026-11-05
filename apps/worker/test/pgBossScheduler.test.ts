@@ -33,7 +33,7 @@ describe('PgBossScheduler Transactional Job Scheduler', () => {
         checkinIntervalDays: 90,
         gracePeriodDays: 30,
         challengeWindowDays: 30,
-        lastCheckinAt: new Date(Date.now() - 70 * 24 * 3600 * 1000) // 20 days until interval expiry (inside 30d window)
+        lastCheckinAt: new Date(Date.now() - 70 * 24 * 3600 * 1000)
       }
     ];
 
@@ -69,7 +69,6 @@ describe('PgBossScheduler Transactional Job Scheduler', () => {
     const count = await scheduler.runHeartbeatSweep(now);
     expect(count).toBe(1);
 
-    // Vault should have transitioned to REMINDER_WINDOW and logged an event
     expect(vaultProvider.updateVaultState).toHaveBeenCalledWith('vault-1', 'REMINDER_WINDOW');
     expect(vaultProvider.logEvent).toHaveBeenCalledWith(
       'vault-1',
@@ -77,7 +76,6 @@ describe('PgBossScheduler Transactional Job Scheduler', () => {
       expect.objectContaining({ from: 'ACTIVE', to: 'REMINDER_WINDOW' })
     );
 
-    // PgBoss.send should have been called with QUEUE_DISPATCH_NOTIFICATION
     const boss = (scheduler as unknown as { boss: { send: ReturnType<typeof vi.fn> } }).boss;
     expect(boss.send).toHaveBeenCalledWith(
       QUEUE_DISPATCH_NOTIFICATION,
@@ -107,11 +105,9 @@ describe('PgBossScheduler Transactional Job Scheduler', () => {
 
     await scheduler.start();
 
-    // 1. Before 30 days: no release
     await scheduler.evaluateChallengeExpiry('vault-challenge', new Date('2026-04-20T00:00:00Z'));
     expect(vaultProvider.updateVaultState).not.toHaveBeenCalled();
 
-    // 2. Exactly on or after 30 days: transitions to RELEASED
     await scheduler.evaluateChallengeExpiry('vault-challenge', new Date('2026-05-01T00:00:01Z'));
     expect(vaultProvider.updateVaultState).toHaveBeenCalledWith('vault-challenge', 'RELEASED');
     expect(vaultProvider.logEvent).toHaveBeenCalledWith(
@@ -125,4 +121,3 @@ describe('PgBossScheduler Transactional Job Scheduler', () => {
     await scheduler.stop();
   });
 });
-

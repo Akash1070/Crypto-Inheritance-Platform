@@ -44,6 +44,7 @@ export async function validateChainForRelease(
 
   let claimInitiatedEvent: AuditEventRecord | null = null;
   let claimInitiatedIndex = -1;
+  let pendingStateFound = false;
 
   // 1. Walk entire chain verifying sequence, hash linkage, and cryptographic signatures
   for (let i = 0; i < events.length; i++) {
@@ -93,18 +94,29 @@ export async function validateChainForRelease(
       };
     }
 
-    if (event.type === 'CLAIM_INITIATED') {
+    if (event.type === 'PENDING' || event.type === 'STATE_TRANSITION_PENDING') {
+      pendingStateFound = true;
+    }
+
+    if (event.type === 'CLAIM_INITIATED' || event.type === 'CLAIM_STARTED') {
+      if (!pendingStateFound) {
+        return {
+          valid: false,
+          eventsEvaluated: i,
+          error: `RELEASE_FORBIDDEN: Claim initiated at sequence ${i} before vault reached PENDING state`
+        };
+      }
       claimInitiatedEvent = event;
       claimInitiatedIndex = i;
     }
   }
 
-  // 2. Enforce that a valid CLAIM_INITIATED event was recorded
+  // 2. Enforce that a valid claim event was recorded following PENDING
   if (!claimInitiatedEvent || claimInitiatedIndex === -1) {
     return {
       valid: false,
       eventsEvaluated: events.length,
-      error: 'RELEASE_FORBIDDEN: No CLAIM_INITIATED event found in event chain'
+      error: 'RELEASE_FORBIDDEN: No CLAIM_INITIATED or CLAIM_STARTED event found in event chain'
     };
   }
 

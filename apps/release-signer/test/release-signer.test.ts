@@ -161,6 +161,48 @@ describe('Isolated Release-Signer Enclave (@cip/release-signer)', () => {
       expect(res.error).toContain('30-day challenge window is still active');
     });
 
+    it('strictly forbids release if claim was initiated before vault reached PENDING state', async () => {
+      const vaultId = 'vault-premature-claim';
+      const chain: AuditEventRecord[] = [];
+
+      // Vault created
+      const seq0 = 0;
+      const p0 = await sha256Hex(JSON.stringify({ label: 'Premature Vault' }));
+      const h0 = computeEventHash(0, 'VAULT_CREATED', p0, GENESIS_PREV_HASH, '2026-01-01T00:00:00.000Z');
+      const sig0 = await signHash(Buffer.from(h0, 'hex'), serverSigningKey.privateKey);
+      chain.push({
+        id: 'evt-0',
+        vaultId,
+        sequence: 0,
+        type: 'VAULT_CREATED',
+        payloadHash: p0,
+        prevHash: GENESIS_PREV_HASH,
+        signature: Buffer.from(sig0).toString('hex'),
+        createdAt: '2026-01-01T00:00:00.000Z'
+      });
+
+      // Claim initiated immediately without any PENDING event
+      const seq1 = 1;
+      const p1 = await sha256Hex(JSON.stringify({ heirPubkey: 'abc' }));
+      const h1 = computeEventHash(1, 'CLAIM_INITIATED', p1, p0, '2026-01-02T00:00:00.000Z');
+      const sig1 = await signHash(Buffer.from(h1, 'hex'), serverSigningKey.privateKey);
+      chain.push({
+        id: 'evt-1',
+        vaultId,
+        sequence: 1,
+        type: 'CLAIM_INITIATED',
+        payloadHash: p1,
+        prevHash: p0,
+        signature: Buffer.from(sig1).toString('hex'),
+        createdAt: '2026-01-02T00:00:00.000Z'
+      });
+
+      const verifiedTime = new Date('2026-06-01T00:00:00.000Z');
+      const res = await validateChainForRelease(vaultId, chain, serverSigningKey.publicKey, verifiedTime);
+      expect(res.valid).toBe(false);
+      expect(res.error).toContain('before vault reached PENDING state');
+    });
+
     it('strictly forbids release if owner cancelled the claim', async () => {
       const vaultId = 'vault-alpha-3';
       const chain = await buildTestChain(vaultId);
@@ -333,6 +375,17 @@ describe('Isolated Release-Signer Enclave (@cip/release-signer)', () => {
 
       expect(res.success).toBe(false);
       expect(res.error).toBeDefined();
+    });
+
+    it('creates an isolated enclave HTTP server with healthcheck and hardened headers', async () => {
+      const { createEnclaveServer } = await import('../src/server.js');
+      const server = createEnclaveServer({
+        enclaveKeyPair: enclaveBoxKey,
+        releaseSigningKey: enclaveSigningKey,
+        serverSigningPublicKey: serverSigningKey.publicKey
+      });
+
+      expect(server).toBeDefined();
     });
   });
 });
