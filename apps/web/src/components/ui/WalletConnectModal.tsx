@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Wallet } from 'lucide-react';
+import { Wallet, AlertTriangle, Zap } from 'lucide-react';
 import { Modal } from './Modal';
 import { Button } from './Button';
 
@@ -98,10 +98,17 @@ export function WalletConnectModal({
         }
       }
 
-      setError('No browser Web3 extension (MetaMask/Rabby) detected. You can enter an address below or load the Demo Whale Estate.');
+      setError('No browser Web3 extension (MetaMask/Rabby) detected. You can paste an address below or load the sample portfolio.');
       setTab('manual');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Wallet connection rejected');
+    } catch (err: unknown) {
+      const errorObj = err as { code?: number; message?: string };
+      if (errorObj?.code === 4001 || errorObj?.message?.toLowerCase().includes('reject')) {
+        setError('Wallet connection prompt was cancelled or rejected in your browser extension.');
+      } else if (errorObj?.code === -32002 || errorObj?.message?.toLowerCase().includes('pending')) {
+        setError('A connection request is already pending in MetaMask/Brave. Check the extension icon in your browser toolbar to approve.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Wallet connection was not completed.');
+      }
     } finally {
       setConnecting(false);
     }
@@ -179,8 +186,28 @@ export function WalletConnectModal({
         </div>
 
         {error && (
-          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40 text-xs text-amber-800 dark:text-amber-300">
-            {error}
+          <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/60 text-xs text-amber-900 dark:text-amber-200 space-y-2">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <span className="leading-relaxed font-medium">{error}</span>
+            </div>
+            <div className="pt-2 border-t border-amber-200/80 dark:border-amber-800/40 flex items-center gap-3 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setTab('manual')}
+                className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Paste Public Address (No Extension) →
+              </button>
+              <span className="text-amber-400 dark:text-amber-600">·</span>
+              <button
+                type="button"
+                onClick={handleLoadDemo}
+                className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+              >
+                <Zap className="w-3 h-3" /> Load 1-Click Demo Estate ($1.6M) →
+              </button>
+            </div>
           </div>
         )}
 

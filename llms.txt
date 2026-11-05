@@ -35,3 +35,4 @@ The Crypto Inheritance Platform (CIP) guarantees sovereign transfer of Bitcoin, 
   }
 }
 ```
+
