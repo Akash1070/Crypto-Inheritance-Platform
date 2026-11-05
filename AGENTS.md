@@ -28,5 +28,5 @@ Real funds, estate secrets, and family legacies depend on this code. Correctness
    - Any import of `libsodium-wrappers-sumo`, `@noble/*`, or `crypto` inside `apps/web` or `apps/api` is a build-failing security violation.
 
 6. **Preserve Archival Blueprints:**
-   - The directories `chatgpt/` and `claude/` are archival reference folders. Do not delete them.
+   - Archival reference prompts and blueprint folders have been safely backed up outside the public repository per owner directive. Keep public repository free of raw prompt logs.
 
