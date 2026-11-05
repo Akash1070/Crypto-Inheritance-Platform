@@ -1,4 +1,4 @@
-import crypto from 'node:crypto';
+import { hmacSha256Hex } from '@cip/crypto-core';
 
 // Standard 2048 BIP-39 wordlist sample for mnemonic derivation
 export const WORDLIST: string[] = [
@@ -37,14 +37,14 @@ export const WORDLIST: string[] = [
 
 /**
  * Generates a 12-word high-entropy Emergency Kit recovery mnemonic.
- * 128-bit entropy drawn from OS CSPRNG.
+ * 128-bit entropy drawn from Web Crypto CSPRNG.
  */
 export function generateEmergencyKitMnemonic(): string {
   const words: string[] = [];
-  const randomBytes = crypto.randomBytes(16); // 128 bits
+  const randomBytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(randomBytes);
 
   for (let i = 0; i < 12; i++) {
-    // Select index into wordlist
     const val = (randomBytes[i]! << 8) | randomBytes[(i + 1) % 16]!;
     const wordIdx = val % WORDLIST.length;
     words.push(WORDLIST[wordIdx]!);
@@ -59,5 +59,5 @@ export function generateEmergencyKitMnemonic(): string {
  */
 export function computeMnemonicVerifier(mnemonic: string, salt: string): string {
   const normalized = mnemonic.trim().toLowerCase().replace(/\s+/g, ' ');
-  return crypto.createHmac('sha256', salt).update(normalized).digest('hex');
+  return hmacSha256Hex(salt, normalized);
 }

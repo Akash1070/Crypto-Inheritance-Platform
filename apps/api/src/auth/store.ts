@@ -1,4 +1,4 @@
-import crypto from 'node:crypto';
+import { secureRandomHex } from '@cip/crypto-core';
 
 export interface UserRecord {
   id: string;
@@ -57,7 +57,7 @@ export class MemoryAuthStore {
       return existing;
     }
 
-    const id = crypto.randomUUID();
+    const id = globalThis.crypto.randomUUID();
     const user: UserRecord = {
       id,
       username: username.toLowerCase(),
@@ -153,7 +153,7 @@ export class MemoryAuthStore {
   }
 
   async createSession(userId: string, ttlHours: number = 24): Promise<SessionRecord> {
-    const id = crypto.randomBytes(32).toString('hex');
+    const id = await secureRandomHex(32);
     const expiresAt = new Date(Date.now() + ttlHours * 3600 * 1000);
     const session: SessionRecord = { id, userId, createdAt: new Date(), expiresAt };
     this.sessions.set(id, session);
@@ -170,8 +170,12 @@ export class MemoryAuthStore {
     return session;
   }
 
+  async deleteSession(sessionId: string): Promise<void> {
+    this.sessions.delete(sessionId);
+  }
+
   async createStepUpToken(userId: string, action: string, ttlSeconds: number = 300): Promise<string> {
-    const token = crypto.randomBytes(32).toString('hex');
+    const token = await secureRandomHex(32);
     const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
     this.stepUpTokens.set(token, { token, userId, action, expiresAt });
     return token;

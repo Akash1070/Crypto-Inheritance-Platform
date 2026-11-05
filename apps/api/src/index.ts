@@ -2,7 +2,9 @@ import Fastify from 'fastify';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
+import rateLimit from '@fastify/rate-limit';
 import { authRoutes } from './routes/auth.js';
+import { vaultRoutes } from './routes/vaults.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -25,12 +27,20 @@ export async function buildApp() {
     parseOptions: {}
   });
 
+  await app.register(rateLimit, {
+    max: 100,
+    timeWindow: '1 minute'
+  });
+
   app.get('/health', async () => {
     return { status: 'healthy', timestamp: new Date().toISOString() };
   });
 
   // Register Auth Routes
   await app.register(authRoutes, { prefix: '/auth' });
+
+  // Register Vault Coordination Routes
+  await app.register(vaultRoutes, { prefix: '/vaults' });
 
   return app;
 }

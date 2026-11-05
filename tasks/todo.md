@@ -28,10 +28,14 @@
 - [x] Step-up verification: Time-bounded single-use 5-minute tokens for high-risk actions (`ADD_HEIR`, `CANCEL_CLAIM`, `CHANGE_GRACE_PERIOD`)
 - [x] Emergency Kit generation: High-entropy mnemonic backup token for account re-association (held offline) with one-way HMAC-SHA256 verifier and 7-day security delay
 
-## Phase 3: Vault Coordination API & Event Hash Chaining (`apps/api`, `packages/protocol`)
-- [ ] Setup PostgreSQL schema via Drizzle ORM (blind HMAC email indices, tenant RLS)
-- [ ] Implement vault CRUD endpoints (strict Zod schema validation, rejecting secret keys)
-- [ ] Implement append-only Merkle hash chain for all vault lifecycle events
+## Phase 3: Vault Coordination API & Event Hash Chaining (`apps/api`, `packages/protocol`) (COMPLETED)
+- [x] Setup PostgreSQL schema via Drizzle ORM (blind HMAC email indices, tenant isolation, ciphertext-only blob storage)
+- [x] Implement strict Zod schemas with unexpected key rejection & BIP-39 mnemonic pattern detection
+- [x] Implement append-only cryptographic Merkle event hash chain with Ed25519 digital signatures and verification
+- [x] Implement vault CRUD endpoints (`POST /vaults`, `GET /vaults`, `GET /vaults/:id`, `PUT /vaults/:id/blob`)
+- [x] Implement passkey liveness check-in (`POST /vaults/:id/checkin`) and countdown pause/resume
+- [x] Implement heir management with step-up token enforcement (`POST /vaults/:id/heirs`)
+- [x] Setup API rate limiting (`@fastify/rate-limit`)
 
 ## Phase 4: State Machine & Background Scheduler (`apps/worker`)
 - [ ] Implement `pg-boss` background scheduler for heartbeat expiration

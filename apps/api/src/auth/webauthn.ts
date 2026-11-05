@@ -4,10 +4,11 @@ import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
   RegistrationResponseJSON,
-  AuthenticationResponseJSON
+  AuthenticationResponseJSON,
+  AuthenticatorTransportFuture
 } from '@simplewebauthn/server';
-import crypto from 'node:crypto';
-import { authStore, CredentialRecord } from './store.js';
+import { secureRandomHex } from '@cip/crypto-core';
+import { authStore } from './store.js';
 import { generateEmergencyKitMnemonic, computeMnemonicVerifier } from './mnemonic.js';
 
 export function getWebAuthnConfig() {
@@ -30,7 +31,7 @@ export async function generateRegistrationCeremonyOptions(userId: string, userna
     attestationType: 'none',
     excludeCredentials: existingCreds.map((c) => ({
       id: c.id,
-      transports: c.transports as any
+      ...(c.transports ? { transports: c.transports as AuthenticatorTransportFuture[] } : {})
     })),
     authenticatorSelection: {
       residentKey: 'required',
@@ -89,7 +90,7 @@ export async function verifyRegistrationCeremonyResponse(
     const user = await authStore.getUserById(userId);
     if (user && !user.emergencyKitVerifier) {
       emergencyKitMnemonic = generateEmergencyKitMnemonic();
-      const salt = crypto.randomBytes(16).toString('hex');
+      const salt = await secureRandomHex(16);
       const verifier = computeMnemonicVerifier(emergencyKitMnemonic, salt);
       await authStore.setEmergencyKitVerifier(userId, verifier, salt);
     }
@@ -106,7 +107,7 @@ export async function verifyRegistrationCeremonyResponse(
 
 export async function generateAuthenticationCeremonyOptions(username?: string) {
   const { rpID } = getWebAuthnConfig();
-  let allowCredentials: { id: string; transports?: any }[] | undefined;
+  let allowCredentials: { id: string; transports?: AuthenticatorTransportFuture[] }[] | undefined;
   let targetUserId = 'anonymous';
 
   if (username) {
@@ -116,7 +117,7 @@ export async function generateAuthenticationCeremonyOptions(username?: string) {
       const creds = await authStore.getCredentialsForUser(user.id);
       allowCredentials = creds.map((c) => ({
         id: c.id,
-        transports: c.transports as any
+        ...(c.transports ? { transports: c.transports as AuthenticatorTransportFuture[] } : {})
       }));
     }
   }
@@ -156,7 +157,7 @@ export async function verifyAuthenticationCeremonyResponse(
     expectedRPID: rpID,
     credential: {
       id: credential.id,
-      publicKey: credential.publicKey as any,
+      publicKey: credential.publicKey as unknown as Uint8Array<ArrayBuffer>,
       counter: credential.signCount
     },
     requireUserVerification: true

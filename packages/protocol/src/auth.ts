@@ -41,3 +41,4 @@ export const EmergencyKitVerifyRequestSchema = z.object({
 });
 
 export type EmergencyKitVerifyRequest = z.infer<typeof EmergencyKitVerifyRequestSchema>;
+

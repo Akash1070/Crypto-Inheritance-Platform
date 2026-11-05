@@ -2,6 +2,7 @@
   "name": "crypto-inheritance-platform",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Open-source zero-knowledge non-custodial crypto inheritance protocol & platform",
   "repository": {
     "type": "git",
@@ -27,6 +28,7 @@
     "prepare": "husky || true"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@turbo/gen": "^2.4.4",
     "@types/node": "^22.13.9",
     "eslint": "^9.21.0",
@@ -34,7 +36,7 @@
     "prettier": "^3.5.3",
     "rimraf": "^6.0.1",
     "turbo": "^2.4.4",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.72.1"
   }
 }
-

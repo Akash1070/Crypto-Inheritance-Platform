@@ -92,3 +92,4 @@ export async function fetchCurrentUser(): Promise<UserProfile | null> {
     return null;
   }
 }
+

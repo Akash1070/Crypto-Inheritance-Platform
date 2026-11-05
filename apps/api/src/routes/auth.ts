@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyPluginAsync } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import {
   RegistrationOptionsRequestSchema,
   RegistrationVerificationRequestSchema,
@@ -8,15 +8,19 @@ import {
   EmergencyKitVerifyRequestSchema
 } from '@cip/protocol';
 import {
+  RegistrationResponseJSON,
+  AuthenticationResponseJSON
+} from '@simplewebauthn/server';
+import { authStore } from '../auth/store.js';
+import {
   generateRegistrationCeremonyOptions,
   verifyRegistrationCeremonyResponse,
   generateAuthenticationCeremonyOptions,
   verifyAuthenticationCeremonyResponse
 } from '../auth/webauthn.js';
-import { authStore } from '../auth/store.js';
 import { computeMnemonicVerifier } from '../auth/mnemonic.js';
 
-export const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
+export async function authRoutes(fastify: FastifyInstance) {
   // 1. Registration Options
   fastify.post('/register/options', async (request, reply) => {
     const parseResult = RegistrationOptionsRequestSchema.safeParse(request.body);
@@ -25,9 +29,12 @@ export const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
     }
 
     const { username, email } = parseResult.data;
-    const user = await authStore.createUser(username, email);
-    const options = await generateRegistrationCeremonyOptions(user.id, user.username);
+    let user = await authStore.getUserByName(username);
+    if (!user) {
+      user = await authStore.createUser(username, email);
+    }
 
+    const options = await generateRegistrationCeremonyOptions(user.id, user.username);
     return reply.send({ userId: user.id, options });
   });
 
@@ -40,11 +47,16 @@ export const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
 
     const { userId, deviceName, response } = parseResult.data;
     try {
-      const result = await verifyRegistrationCeremonyResponse(userId, deviceName, response as any);
+      const result = await verifyRegistrationCeremonyResponse(
+        userId,
+        deviceName,
+        response as unknown as RegistrationResponseJSON
+      );
       return reply.send(result);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Registration verification failed';
       fastify.log.warn({ err }, 'Registration verification failed');
-      return reply.status(400).send({ error: 'REGISTRATION_FAILED', message: err.message });
+      return reply.status(400).send({ error: 'REGISTRATION_FAILED', message });
     }
   });
 
@@ -67,7 +79,9 @@ export const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
     }
 
     try {
-      const { userId, sessionId } = await verifyAuthenticationCeremonyResponse(parseResult.data.response as any);
+      const { userId, sessionId } = await verifyAuthenticationCeremonyResponse(
+        parseResult.data.response as unknown as AuthenticationResponseJSON
+      );
 
       // Set hardened session cookie
       reply.setCookie('cip-session', sessionId, {
@@ -85,9 +99,10 @@ export const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
         credentialsCount: creds.length,
         hasBackupKey: creds.length >= 2
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Authentication verification failed';
       fastify.log.warn({ err }, 'Authentication verification failed');
-      return reply.status(401).send({ error: 'AUTHENTICATION_FAILED', message: err.message });
+      return reply.status(401).send({ error: 'AUTHENTICATION_FAILED', message });
     }
   });
 
@@ -109,11 +124,14 @@ export const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
     }
 
     try {
-      await verifyAuthenticationCeremonyResponse(parseResult.data.response as any);
+      await verifyAuthenticationCeremonyResponse(
+        parseResult.data.response as unknown as AuthenticationResponseJSON
+      );
       const stepUpToken = await authStore.createStepUpToken(session.userId, parseResult.data.action);
       return reply.send({ verified: true, stepUpToken, expiresInSeconds: 300 });
-    } catch (err: any) {
-      return reply.status(400).send({ error: 'STEP_UP_FAILED', message: err.message });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Step-up verification failed';
+      return reply.status(400).send({ error: 'STEP_UP_FAILED', message });
     }
   });
 
@@ -139,16 +157,18 @@ export const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
     // Set user to recovery pending status with 7-day cooling off period
     user.status = 'RECOVERY_PENDING';
     const recoverySession = await authStore.createSession(user.id, 2);
+    const coolingOffExpiresAt = new Date(Date.now() + 7 * 24 * 3600 * 1000);
 
     return reply.send({
       verified: true,
       status: 'RECOVERY_PENDING',
+      coolingOffExpiresAt: coolingOffExpiresAt.toISOString(),
       message: 'Emergency recovery verified. 7-day security delay initiated. An enrollment session is granted.',
       recoverySessionId: recoverySession.id
     });
   });
 
-  // 7. Get Current User Info & Devices
+  // 7. Get Current Session Info
   fastify.get('/me', async (request, reply) => {
     const sessionId = request.cookies['cip-session'];
     if (!sessionId) {
@@ -166,24 +186,23 @@ export const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
     }
 
     const creds = await authStore.getCredentialsForUser(user.id);
+
     return reply.send({
-      id: user.id,
+      userId: user.id,
       username: user.username,
       status: user.status,
-      credentials: creds.map((c) => ({
-        id: c.id,
-        deviceName: c.deviceName,
-        createdAt: c.createdAt,
-        lastUsedAt: c.lastUsedAt
-      })),
-      minimumMet: creds.length >= 2,
-      hasEmergencyKit: Boolean(user.emergencyKitVerifier)
+      credentialsCount: creds.length,
+      hasBackupKey: creds.length >= 2
     });
   });
 
   // 8. Logout
-  fastify.post('/logout', async (_request, reply) => {
+  fastify.post('/logout', async (request, reply) => {
+    const sessionId = request.cookies['cip-session'];
+    if (sessionId) {
+      await authStore.deleteSession(sessionId);
+    }
     reply.clearCookie('cip-session', { path: '/' });
     return reply.send({ success: true });
   });
-};
+}

@@ -1,7 +1,7 @@
 import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
 
-export default [
-  js.configs.recommended,
+export default tseslint.config(
   {
     ignores: [
       '**/dist/**',
@@ -10,8 +10,18 @@ export default [
       '**/node_modules/**',
       'chatgpt/**',
       'claude/**',
-      '.turbo/**'
+      '.turbo/**',
+      '**/*.d.ts'
     ]
+  },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }]
+    }
   },
   {
     files: ['apps/api/**/*.ts', 'apps/web/**/*.ts', 'apps/web/**/*.tsx'],
@@ -41,5 +51,4 @@ export default [
       ]
     }
   }
-];
-
+);
