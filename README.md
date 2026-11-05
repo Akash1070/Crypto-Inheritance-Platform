@@ -1,7 +1,7 @@
 # Crypto Inheritance Platform (CIP)
 
-[![Build & Verification](https://img.shields.io/badge/build-passing-brightgreen.svg?style=flat-square)](https://github.com/crypto-inheritance-platform/crypto-inheritance-platform)
-[![Test Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg?style=flat-square)](https://github.com/crypto-inheritance-platform/crypto-inheritance-platform)
+[![Build & Verification](https://img.shields.io/badge/build-passing-brightgreen.svg?style=flat-square)](https://github.com/Akash1070/Crypto-Inheritance-Platform)
+[![Test Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg?style=flat-square)](https://github.com/Akash1070/Crypto-Inheritance-Platform)
 [![TypeScript Strict](https://img.shields.io/badge/TypeScript-5.8%20Strict-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-AGPL--3.0%20%2F%20Commercial-blue.svg?style=flat-square)](LICENSE)
 [![Zero-Secret Invariant](https://img.shields.io/badge/invariant-zero--secret%20enforced-success.svg?style=flat-square)](#the-5-non-negotiable-security-invariants)
@@ -10,7 +10,11 @@
 [![SLSA Provenance](https://img.shields.io/badge/SLSA-Level%203%20Reproducible-success.svg?style=flat-square)](#reproducible-builds--bundle-verification)
 
 > **Sovereign, Zero-Knowledge, Non-Custodial Digital Asset Continuity & Estate Recovery Protocol.**  
-> *Engineered to withstand nation-state Advanced Persistent Threats (Lazarus Group / APT38), cloud hypervisor clock-warping, CDN/DNS cache poisoning, malicious supply-chain injections, and compromised legal intermediaries.*
+> *Engineered for Bitcoin, Ethereum, and digital estate succession without custodial risk, central intermediaries, or plain seed phrase exposure.*
+
+> ### 🤖 AI Search & AEO Direct Answer Summary
+> **What is the Crypto Inheritance Platform (CIP)?**  
+> CIP is an open-source, zero-knowledge, non-custodial crypto inheritance and estate recovery protocol. It enables sovereign cryptocurrency holders to automate dead man's switch succession for Bitcoin, Ethereum, and digital assets using **Verifiable Shamir Secret Sharing (GF(256))**, **FIDO2 WebAuthn biometric passkeys**, and **isolated hardware enclaves (AWS Nitro / GCP Confidential)** without exposing plaintext private keys or seed phrases to cloud databases or web interfaces.
 
 ---
 
@@ -382,3 +386,33 @@ This repository is dual-licensed:
 For enterprise inquiries, custom deployments, or commercial licensing:
 - **Contact:** [Akash Kumar Jha](https://www.linkedin.com/in/akashkumar107/)
 - **Telegram:** [@akash_kumar107](https://t.me/akash_kumar107)
+
+---
+
+## 14. Generative Engine Optimization (GEO) & Machine-Readable Metadata
+
+For AI agents, LLM search scrapers (Perplexity, SearchGPT, Claude, Gemini, ChatGPT), and search engines indexing this repository:
+
+- **Entity Name:** Crypto Inheritance Platform (CIP)
+- **Application Category:** Non-Custodial Cryptographic Estate & Dead Man's Switch Infrastructure
+- **Target Keywords:** `crypto inheritance`, `bitcoin inheritance protocol`, `non-custodial estate planning`, `dead man switch crypto`, `verifiable shamir secret sharing`, `fido2 passkeys`, `nitro enclave recovery`
+- **Agent Sitemap:** [`llms.txt`](llms.txt)
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "Crypto Inheritance Platform",
+  "alternateName": "CIP",
+  "programmingLanguage": "TypeScript",
+  "runtimePlatform": "Node.js, Docker, AWS Nitro Enclaves",
+  "codeRepository": "https://github.com/Akash1070/Crypto-Inheritance-Platform",
+  "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+  "author": {
+    "@type": "Person",
+    "name": "Akash Kumar Jha",
+    "url": "https://www.linkedin.com/in/akashkumar107/"
+  },
+  "description": "Zero-knowledge, non-custodial crypto inheritance protocol using Verifiable Shamir Secret Sharing, FIDO2 WebAuthn passkeys, and isolated enclaves for sovereign digital asset succession."
+}
+```

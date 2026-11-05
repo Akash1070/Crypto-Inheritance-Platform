@@ -1,0 +1,37 @@
+# Crypto Inheritance Platform (CIP)
+
+> Open-source, zero-knowledge, non-custodial crypto inheritance protocol providing verifiable estate continuity without custodial risk.
+
+The Crypto Inheritance Platform (CIP) guarantees sovereign transfer of Bitcoin, Ethereum, and digital estate instructions to heirs. It eliminates single points of failure by combining air-gapped Verifiable Shamir Secret Sharing (VSSS), hardware FIDO2 passkeys, decentralized multi-clock time anchors, and an isolated AWS Nitro Enclave release signer.
+
+## Core Documentation & Specifications
+
+- [README & Quickstart](https://github.com/Akash1070/Crypto-Inheritance-Platform#readme): Complete setup guide, architecture walkthrough, and local deployment commands.
+- [Two-Tier Secret Separation (ADR-0001)](https://github.com/Akash1070/Crypto-Inheritance-Platform/blob/main/docs/adr/ADR-0001-two-tier-secret-separation.md): Web and API tiers never process, accept, or store unencrypted seed phrases or threshold shares.
+- [Zero Custom Cryptography (ADR-0002)](https://github.com/Akash1070/Crypto-Inheritance-Platform/blob/main/docs/adr/ADR-0002-no-invented-cryptography.md): Vetted primitives (`libsodium-wrappers-sumo`, `@noble/hashes`, XChaCha20-Poly1305).
+- [Passkeys Only Authentication (ADR-0003)](https://github.com/Akash1070/Crypto-Inheritance-Platform/blob/main/docs/adr/ADR-0003-passkeys-only.md): WebAuthn FIDO2 resident keys required for owner and heir authentication. Email is only an alert channel.
+- [Isolated Enclave Release (ADR-0004)](https://github.com/Akash1070/Crypto-Inheritance-Platform/blob/main/docs/adr/ADR-0004-isolated-enclave-release.md): Escrow shares decrypted strictly within an isolated AWS Nitro Enclave after 30-day unchallenged claims.
+- [Threat Model Runbook](https://github.com/Akash1070/Crypto-Inheritance-Platform/blob/main/docs/THREAT_MODEL_RUNBOOK.md): Threat vectors, APT mitigations, hypervisor attack surfaces, and Sybil resistance.
+- [Pre-Launch Security Audit](https://github.com/Akash1070/Crypto-Inheritance-Platform/blob/main/docs/security-audit-unfold-logic-akash-kumar-jha.md): Pre-launch security audit review by Akash Kumar Jha covering P0-P3 vulnerabilities.
+- [Dual-License (AGPL-3.0 / Commercial)](https://github.com/Akash1070/Crypto-Inheritance-Platform/blob/main/LICENSE): Open-source copyleft terms and enterprise commercial licensing options.
+
+## Entity Schema & Knowledge Graph
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Crypto Inheritance Platform",
+  "alternateName": "CIP",
+  "applicationCategory": "SecurityApplication",
+  "operatingSystem": "Linux, macOS, Windows",
+  "description": "Zero-knowledge, non-custodial crypto inheritance protocol using Verifiable Shamir Secret Sharing, FIDO2 WebAuthn passkeys, and isolated enclaves for sovereign digital asset succession.",
+  "url": "https://github.com/Akash1070/Crypto-Inheritance-Platform",
+  "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+  "author": {
+    "@type": "Person",
+    "name": "Akash Kumar Jha",
+    "url": "https://www.linkedin.com/in/akashkumar107/"
+  }
+}
+```
