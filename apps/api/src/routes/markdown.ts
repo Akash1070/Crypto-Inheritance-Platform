@@ -76,7 +76,7 @@ CIP implements Verifiable Shamir Secret Sharing (VSSS) over $\\text{GF}(256)$ wi
   },
   security: {
     slug: 'security',
-    title: 'Security Architecture, Threat Model & Bug Bounty Runbook',
+    title: 'Security Architecture & Threat Model Runbook',
     summary: 'Exhaustive threat modeling against rogue cloud operators, state-level Lazarus APT adversaries, premature heir claims, and clock warping.',
     path: '/security',
     related: [
@@ -101,11 +101,8 @@ Real generational wealth depends on CIP. Security invariants are non-negotiable.
    - *Attack:* Cloud admin fast-forwards the operating system clock by 30 days to simulate elapsed challenge time.
    - *Mitigation:* The release-signer enclave compares local system RTC with signed cryptographic Roughtime attestations across independent global time anchors.
 
-### $250,000 Bug Bounty Program
-We reward security researchers for responsible disclosure:
-- **Critical ($250,000):** Extraction of plaintext vault key from server/enclave without owner authorization.
-- **High ($50,000):** State-machine bypass enabling heir claim without mandatory 30-day challenge window.
-- **Medium ($10,000):** Replay attacks or origin bypass in WebAuthn ceremony.`
+### Responsible Vulnerability Disclosure
+We maintain a formal Coordinated Vulnerability Disclosure process. Independent security researchers who privately discover and report valid issues receive public attribution, safe harbor protections, and coordinated CVE registration.`
   },
   cli: {
     slug: 'cli',

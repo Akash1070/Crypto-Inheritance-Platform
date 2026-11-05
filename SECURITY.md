@@ -1,21 +1,18 @@
-# Security Policy & Bug Bounty Program
+# Security Policy & Responsible Vulnerability Disclosure
 
 Security is the primary foundation of the **Crypto Inheritance Platform (CIP)**. Because real generational assets, estate secrets, and family legacies depend on this protocol, correctness and mathematical security strictly outrank speed.
 
 ---
 
-## 1. Vulnerability Disclosure & Bug Bounty Program
+## 1. Coordinated Vulnerability Disclosure (CVD)
 
-We operate a formal Coordinated Vulnerability Disclosure (CVD) process with rewards for verified vulnerabilities.
+We maintain a strict Coordinated Vulnerability Disclosure process. We deeply value the contributions of independent security researchers and cryptographers who help audit and secure this protocol.
 
-### Reward Matrix (USD)
-
-| Severity | CVSS v3.1 Range | Bounty Reward | Examples |
-|:---|:---:|:---:|:---|
-| **Critical** | 9.0 – 10.0 | **Up to $50,000** | Unauthorized escrow release, cryptographic bypass in VSSS $\text{GF}(256)$, side-channel private key extraction, memory zeroization failure leading to key recovery. |
-| **High** | 7.0 – 8.9 | **Up to $15,000** | WebAuthn passkey authentication bypass, Merkle event chain signature forgery, multi-clock time warp bypass, RLS tenant isolation failure. |
-| **Medium** | 4.0 – 6.9 | **Up to $5,000** | Rate-limit bypass on sensitive endpoints, denial of service in enclave event walker, unexpected schema key injection. |
-| **Low** | 0.1 – 3.9 | **Up to $1,000** | Non-sensitive information disclosure, CSP minor policy gap without script execution, documentation security omissions. |
+### Acknowledgement & Hall of Fame
+As an open-source protocol, CIP does not offer monetary rewards. Valid, responsibly disclosed vulnerabilities receive:
+- **Public Hall of Fame Recognition:** Permanent credit in our release notes and GitHub repository acknowledgements (unless the researcher prefers anonymity).
+- **CVE Attribution:** Coordinated CVE assignment crediting the discoverer.
+- **Direct Engagement:** Fast triage and direct coordination with the core engineering team.
 
 ### Safe Harbor Guarantee
 Security researchers acting in good faith receive full safe harbor protection:

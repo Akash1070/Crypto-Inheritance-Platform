@@ -229,7 +229,7 @@ stateDiagram-v2
 │   ├── adr/              # Formal Architecture Decision Records (ADR-0001 through 0004)
 │   ├── THREAT_MODEL_RUNBOOK.md
 │   └── AUDIT_CHECKLIST.md
-├── SECURITY.md           # Responsible disclosure & $250k bug bounty program
+├── SECURITY.md           # Responsible vulnerability disclosure policy
 ├── docker-compose.yml    # Full-stack containerized deployment
 └── pnpm-workspace.yaml
 ```

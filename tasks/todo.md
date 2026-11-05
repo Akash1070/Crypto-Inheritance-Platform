@@ -56,4 +56,4 @@
 - [x] Build high-density, accessible UI (Vite + React SPA + Tailwind + Radix Primitives)
 - [x] Implement strict Content Security Policy (CSP), SRI, and Trusted Types
 - [x] Implement reproducible Docker build containers and bundle verification CLI (`cip verify-bundle`)
-- [x] Document `README.md`, `SECURITY.md`, `CONTRIBUTING.md`, bug bounty procedures, and disaster recovery runbooks
+- [x] Document `README.md`, `SECURITY.md`, `CONTRIBUTING.md`, responsible disclosure procedures, and disaster recovery runbooks
