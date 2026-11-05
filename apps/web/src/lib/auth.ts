@@ -93,3 +93,14 @@ export async function fetchCurrentUser(): Promise<UserProfile | null> {
   }
 }
 
+export async function logoutUser(): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+  } catch {
+    // ignore
+  }
+}
+

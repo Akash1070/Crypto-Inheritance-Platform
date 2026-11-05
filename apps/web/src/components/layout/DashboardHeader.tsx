@@ -5,7 +5,8 @@ import {
   Sun,
   Moon,
   Wallet,
-  Plus
+  Plus,
+  LogOut
 } from 'lucide-react';
 import type { UserProfile } from '../../lib/auth';
 import { Button } from '../ui/Button';
@@ -19,6 +20,7 @@ interface DashboardHeaderProps {
   connectedAddress: string | null;
   onToggleTheme: () => void;
   onLogin: () => void;
+  onLogout: () => void;
   onOpenWalletModal: () => void;
   onOpenCreateVault: () => void;
 }
@@ -29,6 +31,7 @@ export function DashboardHeader({
   connectedAddress,
   onToggleTheme,
   onLogin,
+  onLogout,
   onOpenWalletModal,
   onOpenCreateVault
 }: DashboardHeaderProps) {
@@ -48,7 +51,7 @@ export function DashboardHeader({
               <h1 className="text-sm sm:text-base font-extrabold tracking-tight text-slate-900 dark:text-white truncate">
                 Crypto Inheritance Platform
               </h1>
-              <Badge tone="success" className="hidden sm:inline-flex font-mono text-[10px]">
+              <Badge tone="success" dot={false} pulse={false} className="hidden sm:inline-flex font-mono text-[10px]">
                 NON-CUSTODIAL
               </Badge>
             </div>
@@ -58,7 +61,7 @@ export function DashboardHeader({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           {user ? (
             <>
               {/* Connected Wallet Pill */}
@@ -85,12 +88,13 @@ export function DashboardHeader({
                 <Plus className="w-3.5 h-3.5" /> + Protect Vault
               </Button>
 
-              <Badge tone="info" dot className="hidden lg:inline-flex font-mono text-[10px]">
+              <Badge tone="info" dot={true} pulse={false} className="hidden lg:inline-flex font-mono text-[10px]">
                 PASSKEY READY
               </Badge>
 
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center text-xs font-bold font-mono text-white shadow">
+              {/* User Profile Pill */}
+              <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center text-xs font-bold font-mono text-white shadow">
                   {user.username.charAt(0).toUpperCase()}
                 </div>
                 <div className="hidden sm:block leading-tight text-left">
@@ -98,6 +102,17 @@ export function DashboardHeader({
                   <p className="text-[10px] text-slate-500 dark:text-slate-400">Vault Owner</p>
                 </div>
               </div>
+
+              {/* Sign Out Button */}
+              <button
+                type="button"
+                onClick={onLogout}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/80 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 text-xs font-semibold transition"
+                title="Sign Out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </button>
             </>
           ) : (
             <Button

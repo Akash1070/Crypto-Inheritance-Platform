@@ -91,6 +91,54 @@ export function EstateAssetsCard({
         </div>
       </div>
 
+      {assets.length > 0 && (
+        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-2.5">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <span>Portfolio Allocation Breakdown</span>
+            <span className="font-mono text-emerald-600 dark:text-emerald-400">100% Monitored</span>
+          </div>
+          {/* Segmented Progress Bar */}
+          <div className="h-3.5 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden flex shadow-inner">
+            {assets.map((asset) => {
+              const pct = totalUsd > 0 ? (asset.usdValue / totalUsd) * 100 : 0;
+              const bgMap = {
+                btc: 'bg-amber-500',
+                eth: 'bg-blue-500',
+                hardware: 'bg-emerald-500',
+                notes: 'bg-purple-500'
+              };
+              return (
+                <div
+                  key={asset.id}
+                  style={{ width: `${Math.max(pct, 2)}%` }}
+                  className={`${bgMap[asset.type]} h-full transition-all duration-500`}
+                  title={`${asset.name}: ${pct.toFixed(1)}%`}
+                />
+              );
+            })}
+          </div>
+          {/* Legend Badges */}
+          <div className="flex items-center gap-4 flex-wrap text-[11px] font-mono">
+            {assets.map((asset) => {
+              const pct = totalUsd > 0 ? ((asset.usdValue / totalUsd) * 100).toFixed(0) : '0';
+              const dotMap = {
+                btc: 'bg-amber-500',
+                eth: 'bg-blue-500',
+                hardware: 'bg-emerald-500',
+                notes: 'bg-purple-500'
+              };
+              return (
+                <div key={asset.id} className="flex items-center gap-1.5">
+                  <span className={`w-2.5 h-2.5 rounded-full ${dotMap[asset.type]} shadow-sm`} />
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{asset.name.split(' ')[0]}</span>
+                  <span className="text-slate-500 dark:text-slate-400">({pct}%)</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {assets.length === 0 ? (
         <div className="p-8 text-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 space-y-3">
           <div className="w-12 h-12 mx-auto rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500">

@@ -4,13 +4,13 @@ import {
   ShieldCheck,
   AlertTriangle,
   Plus,
-  Zap,
-  Info
+  Zap
 } from 'lucide-react';
 import {
   fetchCurrentUser,
   loginWithPasskey,
-  registerPasskey
+  registerPasskey,
+  logoutUser
 } from './lib/auth';
 import type { UserProfile } from './lib/auth';
 import {
@@ -177,6 +177,18 @@ export function App() {
     }
   }
 
+  async function handleLogout() {
+    setLoading(true);
+    try {
+      await logoutUser();
+      setUser(null);
+      setVaults([]);
+      pushToast('info', 'Signed out successfully.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function handleConnectWallet(address: string, newAssets: EstateAsset[]) {
     setConnectedAddress(address);
     setAssets(newAssets);
@@ -293,6 +305,7 @@ export function App() {
         connectedAddress={connectedAddress}
         onToggleTheme={toggleTheme}
         onLogin={handleLogin}
+        onLogout={handleLogout}
         onOpenWalletModal={() => setWalletModalOpen(true)}
         onOpenCreateVault={() => setCreateVaultModalOpen(true)}
       />
@@ -323,42 +336,82 @@ export function App() {
             </div>
           </div>
 
-          {/* Simple 3-Step Explainer for Normal People */}
-          <div className="p-5 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/60 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-sm">
-              <Info className="w-4 h-4 text-blue-500" />
-              <span>How Crypto Inheritance Works (In 3 Simple Steps)</span>
+          {/* Visual Succession Protocol Pipeline */}
+          <div className="p-5 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/80 shadow-md space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-sm">
+                <Zap className="w-4 h-4 text-blue-500" />
+                <span>Automated Succession Pipeline (How Your Estate Is Protected)</span>
+              </div>
+              <span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-500/30 font-semibold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                STAGE 1 ACTIVE
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/60 space-y-1.5">
-                <span className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold flex items-center justify-center font-mono">
-                  1
-                </span>
-                <p className="font-bold text-slate-900 dark:text-white">Protect Your Assets</p>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Name your vault and designate who gets it (wife, son, or friend). Your private secrets are locked with military-grade encryption.
-                </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative">
+              {/* Stage 1 */}
+              <div className="p-4 rounded-xl border-2 border-emerald-500/50 bg-emerald-50/60 dark:bg-emerald-950/20 relative flex flex-col justify-between gap-3 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-mono font-bold text-xs shadow-md">
+                    1
+                  </div>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-200/60 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300">
+                    CURRENT STAGE
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm">Owner Biometric Heartbeat</h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+                    You tap Face ID, Touch ID, or Windows Hello every 90 days. Every tap records a signed cryptographic liveness proof.
+                  </p>
+                </div>
+                <div className="text-[11px] font-mono text-emerald-800 dark:text-emerald-400 font-semibold flex items-center gap-1.5 pt-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                  Countdown Active: 89 Days
+                </div>
               </div>
 
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/60 space-y-1.5">
-                <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-center font-mono">
-                  2
-                </span>
-                <p className="font-bold text-slate-900 dark:text-white">Check In Periodically</p>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Every 3 months, you receive a friendly notification. Simply tap "I'm Alive" with your fingerprint or face to reset the timer.
-                </p>
+              {/* Stage 2 */}
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 relative flex flex-col justify-between gap-3 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-mono font-bold text-xs shadow-md">
+                    2
+                  </div>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400">
+                    ESCALATION BUFFER
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm">30-Day Emergency Window</h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                    If you miss your check-in deadline, multi-channel alerts fire every 72 hours. You can cancel with 1 biometric tap anytime.
+                  </p>
+                </div>
+                <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pt-1">
+                  <span>0 Emergency Claims Active</span>
+                </div>
               </div>
 
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/60 space-y-1.5">
-                <span className="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 font-bold flex items-center justify-center font-mono">
-                  3
-                </span>
-                <p className="font-bold text-slate-900 dark:text-white">Peace of Mind</p>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                  If you ever stop checking in, your family is alerted and can safely claim the instructions to access the estate.
-                </p>
+              {/* Stage 3 */}
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 relative flex flex-col justify-between gap-3 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center font-mono font-bold text-xs shadow-md">
+                    3
+                  </div>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-500/10 text-purple-800 dark:text-purple-400">
+                    AUTOMATED RELEASE
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm">Enclave Heir Handover</h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                    If the 30-day window expires with zero check-in, the isolated AWS Nitro enclave releases keys directly to designated heirs.
+                  </p>
+                </div>
+                <div className="text-[11px] font-mono text-purple-700 dark:text-purple-400 font-semibold flex items-center gap-1.5 pt-1">
+                  <span>Designated: Sarah (70%), David (30%)</span>
+                </div>
               </div>
             </div>
           </div>
