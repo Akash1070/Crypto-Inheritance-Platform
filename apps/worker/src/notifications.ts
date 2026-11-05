@@ -28,6 +28,13 @@ export class MockNotificationDispatcher implements NotificationDispatcher {
   }
 }
 
+export class ConsoleNotificationDispatcher implements NotificationDispatcher {
+  async dispatch(notification: NotificationMessage): Promise<boolean> {
+    console.log(`[Notification Dispatcher] [${notification.tier}] to ${notification.ownerId} (vault ${notification.vaultId}): ${notification.subject}`);
+    return true;
+  }
+}
+
 /**
  * Constructs an escalating security notification message based on the alert tier.
  */
@@ -127,3 +134,4 @@ export function shouldDispatchNotification(vault: WorkerVault, tier: Notificatio
   // In all other cases, do not duplicate notifications within the same tier
   return false;
 }
+

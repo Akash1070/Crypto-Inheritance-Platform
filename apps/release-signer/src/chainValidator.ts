@@ -161,3 +161,4 @@ export async function validateChainForRelease(
     eventsEvaluated: events.length
   };
 }
+

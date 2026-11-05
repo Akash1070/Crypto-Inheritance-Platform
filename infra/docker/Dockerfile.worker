@@ -1,0 +1,42 @@
+# ==============================================================================
+# Multi-Stage Hermetic Build: Background Scheduler & Escalation Worker
+# Base Image: Hardened Node 22 Alpine (Unprivileged User 'node' UID 1000)
+# ==============================================================================
+
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@10.5.2 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json ./
+COPY packages/protocol ./packages/protocol
+COPY packages/crypto-core ./packages/crypto-core
+COPY apps/worker ./apps/worker
+
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @cip/protocol build
+RUN pnpm --filter @cip/crypto-core build
+RUN pnpm --filter @cip/worker build
+
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+RUN apk add --no-cache dumb-init
+
+USER node
+
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/package.json ./package.json
+COPY --from=builder --chown=node:node /app/packages/protocol/dist ./packages/protocol/dist
+COPY --from=builder --chown=node:node /app/packages/protocol/package.json ./packages/protocol/package.json
+COPY --from=builder --chown=node:node /app/packages/crypto-core/dist ./packages/crypto-core/dist
+COPY --from=builder --chown=node:node /app/packages/crypto-core/package.json ./packages/crypto-core/package.json
+COPY --from=builder --chown=node:node /app/apps/worker/dist ./apps/worker/dist
+COPY --from=builder --chown=node:node /app/apps/worker/package.json ./apps/worker/package.json
+
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["node", "apps/worker/dist/main.js"]
+

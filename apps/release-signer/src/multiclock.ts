@@ -109,3 +109,4 @@ export async function verifyMultiClock(
     trustedBeaconsCount: validTimestamps.length
   };
 }
+

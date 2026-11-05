@@ -5,6 +5,7 @@ import { splitKeyAction } from './commands/splitKey.js';
 import { sealShareAction } from './commands/sealShare.js';
 import { recoverAction } from './commands/recover.js';
 import { heirKitAction } from './commands/heirKit.js';
+import { verifyBundleAction } from './commands/verifyBundle.js';
 
 export function createCli(): Command {
   const program = new Command();
@@ -64,6 +65,14 @@ export function createCli(): Command {
     .option('--heir-name <name>', 'Name or label for the heir', 'Appointed Heir')
     .option('-o, --out-html <path>', 'Output path for printable HTML document', 'heir-kit.html')
     .action(heirKitAction);
+
+  program
+    .command('verify-bundle')
+    .description('Verify integrity of web dashboard bundle assets against cryptographic manifest')
+    .requiredOption('-d, --dir <dir>', 'Path to web bundle directory (e.g. apps/web/dist)')
+    .option('-m, --manifest <path>', 'Path to checksums.json manifest (defaults to <dir>/checksums.json)')
+    .option('-g, --generate', 'Generate checksums.json manifest for the specified directory')
+    .action(verifyBundleAction);
 
   return program;
 }

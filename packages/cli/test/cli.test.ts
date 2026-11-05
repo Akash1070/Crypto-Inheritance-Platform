@@ -132,4 +132,105 @@ describe('CLI End-to-End Offline Workflow', () => {
     const recoveredContent = await fs.readFile(recoveredFile, 'utf-8');
     expect(recoveredContent).toBe(secretContent);
   });
+
+  it('generates and verifies web bundle checksum manifest with strict tamper detection', async () => {
+    const cli = createCli();
+
+    // Setup mock dist directory
+    const distDir = path.join(tmpDir, 'web-dist');
+    const assetsDir = path.join(distDir, 'assets');
+    await fs.mkdir(assetsDir, { recursive: true });
+
+    const indexHtml = path.join(distDir, 'index.html');
+    const mainJs = path.join(assetsDir, 'main.js');
+    const stylesCss = path.join(assetsDir, 'styles.css');
+
+    await fs.writeFile(indexHtml, '<!DOCTYPE html><html><body>Secure</body></html>', 'utf-8');
+    await fs.writeFile(mainJs, 'console.log("CIP Web Loaded");', 'utf-8');
+    await fs.writeFile(stylesCss, 'body { background: #000; }', 'utf-8');
+
+    const manifestFile = path.join(distDir, 'checksums.json');
+
+    // 1. Generate manifest
+    await cli.parseAsync([
+      'node',
+      'cip',
+      'verify-bundle',
+      '--dir',
+      distDir,
+      '--manifest',
+      manifestFile,
+      '--generate'
+    ]);
+
+    expect((await fs.stat(manifestFile)).isFile()).toBe(true);
+    const manifestJson = JSON.parse(await fs.readFile(manifestFile, 'utf-8'));
+    expect(manifestJson['index.html']).toBeDefined();
+    expect(manifestJson['assets/main.js']).toBeDefined();
+    expect(manifestJson['assets/styles.css']).toBeDefined();
+    expect(manifestJson['assets/main.js'].sha256Hex).toBeDefined();
+    expect(manifestJson['assets/main.js'].sri.startsWith('sha256-')).toBe(true);
+
+    // 2. Verify legitimate bundle passes cleanly
+    await expect(
+      cli.parseAsync([
+        'node',
+        'cip',
+        'verify-bundle',
+        '--dir',
+        distDir,
+        '--manifest',
+        manifestFile
+      ])
+    ).resolves.not.toThrow();
+
+    // 3. Detect tampered file
+    await fs.writeFile(mainJs, 'console.log("MALICIOUS INJECTED CODE");', 'utf-8');
+    await expect(
+      cli.parseAsync([
+        'node',
+        'cip',
+        'verify-bundle',
+        '--dir',
+        distDir,
+        '--manifest',
+        manifestFile
+      ])
+    ).rejects.toThrow(/tampering|verification failed/i);
+
+    // Restore main.js
+    await fs.writeFile(mainJs, 'console.log("CIP Web Loaded");', 'utf-8');
+
+    // 4. Detect unexpected file injection
+    const evilJs = path.join(assetsDir, 'backdoor.js');
+    await fs.writeFile(evilJs, 'maliciousPayload();', 'utf-8');
+    await expect(
+      cli.parseAsync([
+        'node',
+        'cip',
+        'verify-bundle',
+        '--dir',
+        distDir,
+        '--manifest',
+        manifestFile
+      ])
+    ).rejects.toThrow(/unexpected extraneous files/i);
+
+    // Clean up evilJs
+    await fs.unlink(evilJs);
+
+    // 5. Detect missing file
+    await fs.unlink(stylesCss);
+    await expect(
+      cli.parseAsync([
+        'node',
+        'cip',
+        'verify-bundle',
+        '--dir',
+        distDir,
+        '--manifest',
+        manifestFile
+      ])
+    ).rejects.toThrow(/missing bundle files/i);
+  });
 });

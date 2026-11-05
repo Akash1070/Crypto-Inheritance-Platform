@@ -52,8 +52,8 @@
 - [x] Implement escrow share decryption, direct re-encryption to Heir X25519 public key, and mandatory memory zeroization
 - [x] 11 comprehensive unit and integration tests passing with complete round-trip proof
 
-## Phase 6: Web Dashboard & Open-Source Release (`apps/web`, `infra/`)
-- [ ] Build high-density, accessible UI (Vite + React SPA + Tailwind + Radix Primitives)
-- [ ] Implement strict Content Security Policy (CSP), SRI, and Trusted Types
-- [ ] Implement reproducible Docker build containers and bundle verification CLI (`cip verify-bundle`)
-- [ ] Document `SECURITY.md`, bug bounty procedures, and disaster recovery runbooks
+## Phase 6: Web Dashboard & Open-Source Release (`apps/web`, `infra/`) (COMPLETED)
+- [x] Build high-density, accessible UI (Vite + React SPA + Tailwind + Radix Primitives)
+- [x] Implement strict Content Security Policy (CSP), SRI, and Trusted Types
+- [x] Implement reproducible Docker build containers and bundle verification CLI (`cip verify-bundle`)
+- [x] Document `README.md`, `SECURITY.md`, `CONTRIBUTING.md`, bug bounty procedures, and disaster recovery runbooks

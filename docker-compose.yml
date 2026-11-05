@@ -1,0 +1,123 @@
+services:
+  # ============================================================================
+  # 1. PostgreSQL Database with Blind HMAC Indexing
+  # ============================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: cip-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cip_admin
+      POSTGRES_PASSWORD: cip_dev_password_change_in_prod
+      POSTGRES_DB: cip_vaults
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cip-internal
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cip_admin -d cip_vaults"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================================
+  # 2. Vault Coordination API (Zero Raw Secret Invariant)
+  # ============================================================================
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.api
+    container_name: cip-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://cip_admin:cip_dev_password_change_in_prod@postgres:5432/cip_vaults
+      CIP_WEB_ORIGIN: http://localhost:8080
+      CIP_COOKIE_SECRET: cip-dev-cookie-secret-key-32bytes-must-be-rotated-for-production
+      CIP_ENCLAVE_URL: http://release-signer:3001
+    ports:
+      - "3000:3000"
+    networks:
+      - cip-internal
+      - cip-public
+      - cip-enclave-net
+    security_opt:
+      - no-new-privileges:true
+
+  # ============================================================================
+  # 3. Background Scheduler & Liveness Escalation Worker
+  # ============================================================================
+  worker:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.worker
+    container_name: cip-worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://cip_admin:cip_dev_password_change_in_prod@postgres:5432/cip_vaults
+      CIP_WORKER_INTERVAL_MS: 30000
+    networks:
+      - cip-internal
+    security_opt:
+      - no-new-privileges:true
+
+  # ============================================================================
+  # 4. Isolated Release-Signer Enclave (Multi-Clock Verified Escrow Release)
+  # Zero outbound access: internal network only
+  # ============================================================================
+  release-signer:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.release-signer
+    container_name: cip-release-signer
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+    networks:
+      - cip-enclave-net
+    security_opt:
+      - no-new-privileges:true
+
+  # ============================================================================
+  # 5. Hardened Web Dashboard (Unprivileged Nginx, Strict CSP)
+  # ============================================================================
+  web:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.web
+    container_name: cip-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8080:8080"
+    networks:
+      - cip-public
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  cip-public:
+    driver: bridge
+  cip-internal:
+    driver: bridge
+  cip-enclave-net:
+    driver: bridge
+    internal: true # Enforces air-gap: no egress to external internet
+
+volumes:
+  postgres_data:
+
