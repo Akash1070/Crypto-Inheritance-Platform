@@ -58,14 +58,14 @@ export function HeirsDirectoryCard({ onAddHeirClick }: HeirsDirectoryCardProps) 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-white/5">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
+            <h3 className="text-base font-bold text-slate-950 dark:text-white tracking-tight">
               Designated Beneficiaries & Heirs
             </h3>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono border bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-300 border-purple-300 dark:border-purple-500/20">
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-sans font-bold border bg-purple-100 text-purple-900 dark:bg-purple-500/10 dark:text-purple-300 border-purple-300 dark:border-purple-500/30">
               {heirs.length} BENEFICIARIES
             </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-sans">
             The people who receive recovery instructions if your check-in deadline expires.
           </p>
         </div>
@@ -73,7 +73,7 @@ export function HeirsDirectoryCard({ onAddHeirClick }: HeirsDirectoryCardProps) 
         <Button
           size="sm"
           variant="primary"
-          className="bg-purple-600 hover:bg-purple-500 text-white font-mono text-xs shadow-md shadow-purple-500/20 shrink-0"
+          className="bg-purple-600 hover:bg-purple-500 text-white font-sans font-bold text-xs shadow-md shadow-purple-500/20 shrink-0"
           onClick={onAddHeirClick}
         >
           <Plus className="w-3.5 h-3.5" /> + Add Beneficiary

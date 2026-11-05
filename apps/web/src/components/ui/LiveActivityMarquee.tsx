@@ -65,14 +65,14 @@ export function LiveActivityMarquee() {
           return (
             <div
               key={`${item.id}-${idx}`}
-              className="flex items-center space-x-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-900/40 px-3 py-1 text-xs font-mono text-slate-700 dark:text-slate-300 shadow-sm dark:shadow-none"
+              className="flex items-center space-x-2.5 rounded-lg border border-slate-300 dark:border-white/5 bg-white dark:bg-slate-900/40 px-3 py-1 text-xs font-sans text-slate-800 dark:text-slate-300 shadow-xs dark:shadow-none"
             >
               <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <Icon className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
-              <span className="font-semibold text-slate-800 dark:text-slate-200">{item.type}</span>
+              <Icon className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+              <span className="font-bold text-slate-950 dark:text-slate-200">{item.type}</span>
               <span className="text-slate-400 dark:text-slate-500">·</span>
-              <span className="text-slate-600 dark:text-slate-400">{item.vaultId}</span>
-              <span className="rounded bg-emerald-50 dark:bg-white/5 px-1.5 py-0.5 text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">
+              <span className="text-slate-700 dark:text-slate-400 font-mono text-[11px] font-medium">{item.vaultId}</span>
+              <span className="rounded bg-emerald-100 dark:bg-white/5 px-1.5 py-0.5 text-[10px] text-emerald-900 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-transparent">
                 {item.tag}
               </span>
             </div>

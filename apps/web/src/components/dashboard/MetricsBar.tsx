@@ -57,11 +57,11 @@ export function MetricsBar({ vaults }: MetricsBarProps) {
           spotlightColor={m.glow}
           className="p-5 border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/60 shadow-sm dark:shadow-md"
         >
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">
+          <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
+            <span className="text-[11px] font-sans uppercase tracking-wider font-bold">
               {m.label}
             </span>
-            <m.icon className="w-4 h-4 opacity-75" />
+            <m.icon className="w-4 h-4 opacity-80" />
           </div>
           <p className={`text-3xl font-extrabold font-mono tabular-nums leading-none mt-3 ${m.textColor}`}>
             <NumberTicker value={m.value} />

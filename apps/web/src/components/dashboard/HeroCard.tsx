@@ -62,19 +62,19 @@ export function HeroCard({
                 <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 PROTECTION RUNNING · PASSKEY ACTIVE
               </BadgeShimmer>
-              <span className="text-xs font-mono text-slate-500 dark:text-slate-400 font-medium">
+              <span className="text-xs font-sans text-slate-600 dark:text-slate-400 font-semibold">
                 {dateLabel}
               </span>
             </div>
 
             <div>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-950 dark:text-white">
                 Welcome back,{' '}
                 <span className="bg-gradient-to-r from-blue-600 via-sky-500 to-emerald-500 dark:from-blue-400 dark:via-sky-300 dark:to-emerald-400 bg-clip-text text-transparent">
                   {user.username}
                 </span>
               </h2>
-              <p className="mt-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-lg">
+              <p className="mt-1.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed max-w-lg font-sans">
                 Your dead-man's switch is actively monitored. Tap below to confirm you are alive and keep your estate timer live.
               </p>
             </div>

@@ -48,14 +48,14 @@ export function DashboardHeader({
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-sm sm:text-base font-extrabold tracking-tight text-slate-900 dark:text-white truncate">
+              <h1 className="text-base sm:text-lg font-black font-sans tracking-tight text-slate-950 dark:text-white truncate">
                 Crypto Inheritance Platform
               </h1>
-              <Badge tone="success" dot={false} pulse={false} className="hidden sm:inline-flex font-mono text-[10px]">
+              <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-sans font-bold uppercase tracking-wider bg-emerald-100 text-emerald-900 dark:bg-emerald-500/15 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 shadow-xs">
                 NON-CUSTODIAL
-              </Badge>
+              </span>
             </div>
-            <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
+            <p className="text-xs font-sans font-medium text-slate-600 dark:text-slate-300 truncate">
               Dead-Man's Switch & Estate Protection
             </p>
           </div>
@@ -68,13 +68,13 @@ export function DashboardHeader({
               <button
                 type="button"
                 onClick={onOpenWalletModal}
-                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 hover:border-slate-300 dark:hover:border-slate-700 text-xs font-mono transition"
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950/60 hover:border-slate-400 dark:hover:border-slate-700 text-xs font-sans transition shadow-xs"
               >
-                <Wallet className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
+                <Wallet className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 {shortAddress ? (
-                  <span className="text-slate-700 dark:text-slate-200 font-semibold">{shortAddress}</span>
+                  <span className="text-slate-950 dark:text-slate-100 font-mono font-semibold">{shortAddress}</span>
                 ) : (
-                  <span className="text-slate-500 dark:text-slate-400">Link Wallet</span>
+                  <span className="text-slate-700 dark:text-slate-300 font-medium">Link Wallet</span>
                 )}
               </button>
 
@@ -82,24 +82,24 @@ export function DashboardHeader({
               <Button
                 variant="primary"
                 size="sm"
-                className="hidden md:inline-flex bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs shadow-md shadow-blue-500/20"
+                className="hidden md:inline-flex bg-blue-600 hover:bg-blue-500 text-white font-sans font-bold text-xs shadow-md shadow-blue-500/20"
                 onClick={onOpenCreateVault}
               >
                 <Plus className="w-3.5 h-3.5" /> + Protect Vault
               </Button>
 
-              <Badge tone="info" dot={true} pulse={false} className="hidden lg:inline-flex font-mono text-[10px]">
+              <Badge tone="info" dot={true} pulse={false} className="hidden lg:inline-flex text-[11px]">
                 PASSKEY READY
               </Badge>
 
               {/* User Profile Pill */}
-              <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center text-xs font-bold font-mono text-white shadow">
+              <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-950/60 border border-slate-300 dark:border-slate-800 shadow-xs">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-emerald-600 flex items-center justify-center text-xs font-bold font-sans text-white shadow">
                   {user.username.charAt(0).toUpperCase()}
                 </div>
                 <div className="hidden sm:block leading-tight text-left">
-                  <p className="text-xs font-semibold text-slate-800 dark:text-white font-mono">{user.username}</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Vault Owner</p>
+                  <p className="text-xs font-bold text-slate-950 dark:text-white font-sans">{user.username}</p>
+                  <p className="text-[10px] text-slate-600 dark:text-slate-400 font-sans font-medium">Vault Owner</p>
                 </div>
               </div>
 
@@ -107,7 +107,7 @@ export function DashboardHeader({
               <button
                 type="button"
                 onClick={onLogout}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/80 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 text-xs font-semibold transition"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-red-300 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 text-xs font-bold font-sans transition"
                 title="Sign Out"
               >
                 <LogOut className="w-3.5 h-3.5" />
@@ -118,7 +118,7 @@ export function DashboardHeader({
             <Button
               onClick={onLogin}
               size="md"
-              className="bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs shadow-lg shadow-blue-500/20"
+              className="bg-blue-600 hover:bg-blue-500 text-white font-sans font-bold text-xs sm:text-sm tracking-wide shadow-md shadow-blue-500/20"
             >
               <Fingerprint className="w-4 h-4" /> Sign In with Passkey
             </Button>

@@ -7,27 +7,27 @@
     color-scheme: light;
     --primary: 0 112 243;
     --primary-soft: 235 244 255;
-    --base: 250 250 250;
+    --base: 248 250 252;
     --surface: 255 255 255;
     --elevated: 255 255 255;
-    --line: 10 10 10;
-    --ink: 23 23 23;
-    --sub: 82 82 91;
-    --faint: 113 113 122;
-    --grid-line: 10 10 10;
+    --line: 226 232 240;
+    --ink: 2 6 23;
+    --sub: 51 65 85;
+    --faint: 100 116 139;
+    --grid-line: 148 163 184;
   }
 
   .dark {
     color-scheme: dark;
     --primary: 59 130 246;
     --primary-soft: 13 40 76;
-    --base: 23 23 23;
-    --surface: 28 28 30;
-    --elevated: 38 38 40;
+    --base: 9 13 22;
+    --surface: 15 23 42;
+    --elevated: 30 41 59;
     --line: 255 255 255;
-    --ink: 237 237 237;
-    --sub: 161 161 170;
-    --faint: 113 113 122;
+    --ink: 248 250 252;
+    --sub: 148 163 184;
+    --faint: 100 116 139;
     --grid-line: 148 163 184;
   }
 
@@ -38,8 +38,11 @@
   }
 
   body {
-    @apply bg-base text-ink antialiased;
+    @apply bg-base text-ink font-sans antialiased;
     font-feature-settings: 'ss01', 'cv02';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   ::selection {
