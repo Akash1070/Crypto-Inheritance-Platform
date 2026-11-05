@@ -11,6 +11,7 @@ import { generateSigningKeyPair, SigningKeyPair } from '@cip/crypto-core';
 import { vaultStore } from '../vaults/store.js';
 import { authStore } from '../auth/store.js';
 import { eventChainManager } from '../events/hashChain.js';
+import { getSessionIdFromRequest } from '../auth/sessionHelper.js';
 
 // Server enclave signing key for Merkle audit chain
 let serverSigningKey: SigningKeyPair | null = null;
@@ -25,7 +26,7 @@ export async function getServerSigningKey(): Promise<SigningKeyPair> {
 export const vaultRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // Pre-handler hook to authenticate session on all vault routes
   fastify.addHook('preHandler', async (request, reply) => {
-    const sessionId = request.cookies['cip-session'];
+    const sessionId = getSessionIdFromRequest(request);
     if (!sessionId) {
       return reply.status(401).send({ error: 'UNAUTHORIZED', message: 'Missing session cookie' });
     }

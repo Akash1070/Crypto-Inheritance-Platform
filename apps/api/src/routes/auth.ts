@@ -7,6 +7,7 @@ import {
   StepUpVerificationRequestSchema,
   EmergencyKitVerifyRequestSchema
 } from '@cip/protocol';
+import { SESSION_COOKIE_NAME, getSessionIdFromRequest } from '../auth/sessionHelper.js';
 import {
   RegistrationResponseJSON,
   AuthenticationResponseJSON
@@ -84,7 +85,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       );
 
       // Set hardened session cookie
-      reply.setCookie('cip-session', sessionId, {
+      reply.setCookie(SESSION_COOKIE_NAME, sessionId, {
         path: '/',
         httpOnly: true,
         secure: process.env['NODE_ENV'] === 'production',
@@ -108,7 +109,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   // 5. Step-Up Verification for high-risk actions
   fastify.post('/stepup/verify', async (request, reply) => {
-    const sessionId = request.cookies['cip-session'];
+    const sessionId = getSessionIdFromRequest(request);
     if (!sessionId) {
       return reply.status(401).send({ error: 'UNAUTHORIZED' });
     }
@@ -170,7 +171,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   // 7. Get Current Session Info
   fastify.get('/me', async (request, reply) => {
-    const sessionId = request.cookies['cip-session'];
+    const sessionId = getSessionIdFromRequest(request);
     if (!sessionId) {
       return reply.status(401).send({ error: 'UNAUTHORIZED' });
     }
@@ -198,11 +199,11 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   // 8. Logout
   fastify.post('/logout', async (request, reply) => {
-    const sessionId = request.cookies['cip-session'];
+    const sessionId = getSessionIdFromRequest(request);
     if (sessionId) {
       await authStore.deleteSession(sessionId);
     }
-    reply.clearCookie('cip-session', { path: '/' });
+    reply.clearCookie(SESSION_COOKIE_NAME, { path: '/' });
     return reply.send({ success: true });
   });
 }

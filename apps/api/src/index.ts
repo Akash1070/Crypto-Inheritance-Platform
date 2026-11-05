@@ -14,7 +14,23 @@ export async function buildApp() {
   });
 
   await app.register(helmet, {
-    contentSecurityPolicy: true
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'none'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        connectSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:'],
+        fontSrc: ["'self'"],
+        frameAncestors: ["'none'"],
+        baseUri: ["'none'"],
+        formAction: ["'self'"],
+        requireTrustedTypesFor: ["'script'"]
+      }
+    },
+    crossOriginOpenerPolicy: { policy: 'same-origin' },
+    crossOriginEmbedderPolicy: { policy: 'require-corp' },
+    crossOriginResourcePolicy: { policy: 'same-origin' }
   });
 
   await app.register(cors, {

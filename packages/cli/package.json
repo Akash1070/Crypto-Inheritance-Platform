@@ -4,7 +4,8 @@
   "private": true,
   "description": "Standalone offline CLI tool for Crypto Inheritance Platform",
   "bin": {
-    "cip": "./bin/cip.js"
+    "cip": "./bin/cip.js",
+    "aethel": "./bin/cip.js"
   },
   "type": "module",
   "main": "./dist/index.js",

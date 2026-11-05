@@ -121,3 +121,4 @@ describe('PgBossScheduler Transactional Job Scheduler', () => {
     await scheduler.stop();
   });
 });
+
