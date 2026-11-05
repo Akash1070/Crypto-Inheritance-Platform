@@ -55,9 +55,9 @@ const DEMO_ACTIVITIES: ActivityItem[] = [
 
 export function LiveActivityMarquee() {
   return (
-    <div className="relative w-full overflow-hidden border-y border-white/5 bg-slate-950/40 py-2.5 backdrop-blur-md">
-      <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-20 bg-gradient-to-r from-[#090D16] to-transparent" />
-      <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-20 bg-gradient-to-l from-[#090D16] to-transparent" />
+    <div className="relative w-full overflow-hidden border-y border-slate-200 dark:border-white/5 bg-white/70 dark:bg-slate-950/40 py-2.5 backdrop-blur-md">
+      <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-20 bg-gradient-to-r from-slate-100 dark:from-[#090D16] to-transparent" />
+      <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-20 bg-gradient-to-l from-slate-100 dark:from-[#090D16] to-transparent" />
 
       <div className="flex w-max animate-marquee space-x-8 hover:[animation-play-state:paused]">
         {[...DEMO_ACTIVITIES, ...DEMO_ACTIVITIES].map((item, idx) => {
@@ -65,14 +65,14 @@ export function LiveActivityMarquee() {
           return (
             <div
               key={`${item.id}-${idx}`}
-              className="flex items-center space-x-2.5 rounded-lg border border-white/5 bg-slate-900/40 px-3 py-1 text-xs font-mono text-slate-300"
+              className="flex items-center space-x-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-900/40 px-3 py-1 text-xs font-mono text-slate-700 dark:text-slate-300 shadow-sm dark:shadow-none"
             >
-              <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <Icon className="h-3.5 w-3.5 text-blue-400" />
-              <span className="font-semibold text-slate-200">{item.type}</span>
-              <span className="text-slate-500">·</span>
-              <span className="text-slate-400">{item.vaultId}</span>
-              <span className="rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-emerald-400">
+              <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <Icon className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
+              <span className="font-semibold text-slate-800 dark:text-slate-200">{item.type}</span>
+              <span className="text-slate-400 dark:text-slate-500">·</span>
+              <span className="text-slate-600 dark:text-slate-400">{item.vaultId}</span>
+              <span className="rounded bg-emerald-50 dark:bg-white/5 px-1.5 py-0.5 text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">
                 {item.tag}
               </span>
             </div>

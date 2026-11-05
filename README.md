@@ -14,6 +14,14 @@
 
 ---
 
+> ### 🏢 Want to build this at enterprise level?
+> If you or your organization want to take the Crypto Inheritance Platform to production — scaling, compliance, custom deployments, or white-label — reach out directly:
+>
+> - **Telegram:** [t.me/akash_kumar107](https://t.me/akash_kumar107)
+> - **LinkedIn:** [linkedin.com/in/akashkumar107](https://www.linkedin.com/in/akashkumar107/)
+
+---
+
 ## Table of Contents
 
 - [1. The Problem: Why Legacy Inheritance Fails](#1-the-problem-why-legacy-inheritance-fails)
@@ -27,7 +35,8 @@
 - [9. Threat Model & Lazarus Group Mitigation Runbook](#9-threat-model--lazarus-group-mitigation-runbook)
 - [10. Frequently Asked Questions (FAQ)](#10-frequently-asked-questions-faq)
 - [11. Audit Quality Gates & $250,000 Bug Bounty](#11-audit-quality-gates--250000-bug-bounty)
-- [12. License](#12-license)
+- [12. Third-Party Security Audit](#12-third-party-security-audit)
+- [13. License](#13-license)
 
 ---
 
@@ -331,9 +340,17 @@ Review our audit runbooks before submission:
 - [Threat Model Runbook](docs/THREAT_MODEL_RUNBOOK.md)
 - [Pre-Audit Checklist](docs/AUDIT_CHECKLIST.md)
 - [Security Disclosure Policy](SECURITY.md)
+- [Third-Party Pre-Launch Security Audit — Unfold Logic / Akash Kumar Jha](docs/security-audit-unfold-logic-akash-kumar-jha.md)
 
 ---
 
-## 12. License
+## 12. Third-Party Security Audit
+
+Full pre-launch review (ranked P0–P3 findings with fixes and verification status) is documented in:
+[Third-Party Pre-Launch Security Audit — Unfold Logic / Akash Kumar Jha](docs/security-audit-unfold-logic-akash-kumar-jha.md)
+
+---
+
+## 13. License
 
 This project is dual-licensed under the **Apache License, Version 2.0** or the **MIT License**, at your discretion. See [LICENSE](LICENSE) for details.
