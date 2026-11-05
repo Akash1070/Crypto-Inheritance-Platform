@@ -74,3 +74,6 @@ export async function openSealedBox(
   }
 }
 
+export { openSealedBox as openBox };
+
+

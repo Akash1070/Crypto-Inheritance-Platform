@@ -45,11 +45,12 @@
 - [x] Implement deterministic scheduler cycle runner with Merkle audit event logging (`apps/worker/src/scheduler.ts`)
 - [x] Comprehensive test suite (15 unit and integration tests passing)
 
-## Phase 5: Isolated Release Signer Enclave (`apps/release-signer`)
-- [ ] Implement minimalist enclave service (< 1,000 LOC, zero external dependencies)
-- [ ] Implement Multi-Clock verification (Hardware RTC + Cloudflare Roughtime beacons)
-- [ ] Implement event chain validator (monotonic sequence, timer verification, zero cancel events)
-- [ ] Implement escrow share decryption, re-encryption to Heir public key, and memory zeroization
+## Phase 5: Isolated Release Signer Enclave (`apps/release-signer`) (COMPLETED)
+- [x] Implement minimalist enclave service (357 LOC, strictly < 1,000 LOC target)
+- [x] Implement Multi-Clock verification (Hardware RTC + Cloudflare/Google signed Roughtime beacons)
+- [x] Implement Merkle event chain validator (monotonic sequence, hash linkage, Ed25519 signatures, zero cancel/checkin events)
+- [x] Implement escrow share decryption, direct re-encryption to Heir X25519 public key, and mandatory memory zeroization
+- [x] 11 comprehensive unit and integration tests passing with complete round-trip proof
 
 ## Phase 6: Web Dashboard & Open-Source Release (`apps/web`, `infra/`)
 - [ ] Build high-density, accessible UI (Vite + React SPA + Tailwind + Radix Primitives)

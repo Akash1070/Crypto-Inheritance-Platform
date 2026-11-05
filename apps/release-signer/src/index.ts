@@ -5,8 +5,6 @@
  * Evaluates Merkle event chain and Multi-Clock time anchors before releasing Escrow Share S.
  */
 
-export async function verifyAndReleaseEscrow() {
-  // To be implemented in Phase 5
-  return { released: false, error: 'NOT_IMPLEMENTED' };
-}
-
+export * from './multiclock.js';
+export * from './chainValidator.js';
+export * from './enclave.js';
