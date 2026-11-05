@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { buildApp } from '../src/index.js';
 import { authStore } from '../src/auth/store.js';
 import { generateEmergencyKitMnemonic, computeMnemonicVerifier } from '../src/auth/mnemonic.js';
+import { secureRandomHex } from '@cip/crypto-core';
 
 describe('WebAuthn Passkeys & Identity Layer', () => {
   let app: Awaited<ReturnType<typeof buildApp>>;
@@ -47,24 +48,25 @@ describe('WebAuthn Passkeys & Identity Layer', () => {
       expect(badEmail.statusCode).toBe(400);
     });
 
-    it('prevents account takeover by rejecting registration for existing usernames', async () => {
-      // First registration succeeds
-      const first = await app.inject({
-        method: 'POST',
-        url: '/auth/register/options',
-        payload: { username: 'charlie_owner', email: 'charlie@example.com' }
-      });
-      expect(first.statusCode).toBe(200);
+    it('does not disclose existing usernames during registration options (anti-enumeration)', async () => {
+      await authStore.createUser('charlie_owner', 'charlie@example.com');
 
-      // Second unauthenticated attempt with same username must be blocked
+      // Identical payload for an already-registered username must return 200,
+      // indistinguishable from a fresh registration.
       const hijackAttempt = await app.inject({
         method: 'POST',
         url: '/auth/register/options',
         payload: { username: 'charlie_owner', email: 'attacker@evil.com' }
       });
-      expect(hijackAttempt.statusCode).toBe(409);
+      expect(hijackAttempt.statusCode).toBe(200);
       const body = JSON.parse(hijackAttempt.payload);
-      expect(body.error).toBe('USERNAME_TAKEN');
+      expect(body.userId).toBeDefined();
+      expect(body.options.challenge).toBeDefined();
+    });
+
+    it('rejects duplicate usernames only at verification time', async () => {
+      await authStore.createUser('dup_owner', 'dup@example.com');
+      await expect(authStore.createUser('dup_owner', 'other@example.com')).rejects.toThrow('USER_ALREADY_EXISTS');
     });
   });
 
@@ -100,8 +102,8 @@ describe('WebAuthn Passkeys & Identity Layer', () => {
 
       // Generate Emergency Kit
       const mnemonic = generateEmergencyKitMnemonic();
-      const salt = 'salt-12345';
-      const verifier = computeMnemonicVerifier(mnemonic, salt);
+      const salt = await secureRandomHex(16);
+      const verifier = await computeMnemonicVerifier(mnemonic, salt);
       await authStore.setEmergencyKitVerifier(user.id, verifier, salt);
 
       const refreshed = await authStore.getUserById(user.id);
@@ -151,8 +153,8 @@ describe('WebAuthn Passkeys & Identity Layer', () => {
     it('verifies high-entropy mnemonic and initiates 7-day security delay', async () => {
       const user = await authStore.createUser('charlie_estate', 'charlie@example.com');
       const mnemonic = generateEmergencyKitMnemonic();
-      const salt = 'test-salt-abc';
-      const verifier = computeMnemonicVerifier(mnemonic, salt);
+      const salt = await secureRandomHex(16);
+      const verifier = await computeMnemonicVerifier(mnemonic, salt);
       await authStore.setEmergencyKitVerifier(user.id, verifier, salt);
 
       // Verify with valid mnemonic

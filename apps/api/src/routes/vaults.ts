@@ -328,9 +328,9 @@ export const vaultRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
       });
     }
 
-    const verifiedStepUpUser = await authStore.verifyAndConsumeStepUpToken(stepUpToken, 'ADD_HEIR');
+    const verifiedStepUpUser = await authStore.verifyAndConsumeStepUpToken(stepUpToken, 'ADD_HEIR', vault.id);
     if (!verifiedStepUpUser || verifiedStepUpUser !== userId) {
-      return reply.status(403).send({ error: 'INVALID_STEP_UP_TOKEN', message: 'Step-up token expired or invalid' });
+      return reply.status(403).send({ error: 'INVALID_STEP_UP_TOKEN', message: 'Step-up token expired, invalid, or bound to a different vault' });
     }
 
     const parseResult = AddHeirRequestSchema.safeParse(request.body);
@@ -357,7 +357,7 @@ export const vaultRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
     });
   });
 
-  // 9. Get Merkle Event Chain Audit Log
+  // 9. Get Merkle Event Chain Audit Log (paginated)
   fastify.get('/:id/events', async (request, reply) => {
     const userId = request.userId!;
     const { id } = request.params as { id: string };
@@ -367,14 +367,23 @@ export const vaultRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
       return reply.status(404).send({ error: 'VAULT_NOT_FOUND' });
     }
 
-    const chain = await eventChainManager.getEvents(vault.id);
+    const rawLimit = Number((request.query as Record<string, string | undefined>)['limit'] ?? 200);
+    const rawBefore = (request.query as Record<string, string | undefined>)['beforeSequence'];
+    const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(Math.trunc(rawLimit), 1), 1000) : 200;
+    const beforeSequence = rawBefore !== undefined && /^\d+$/.test(rawBefore) ? Number(rawBefore) : undefined;
+
+    const chain = await eventChainManager.getEvents(
+      vault.id,
+      beforeSequence !== undefined ? { limit, beforeSequence } : { limit }
+    );
     const signingKey = await getServerSigningKey();
 
     return reply.send({
       vaultId: vault.id,
       serverPublicKey: Buffer.from(signingKey.publicKey).toString('hex'),
       eventsCount: chain.length,
-      events: chain
+      events: chain,
+      page: { limit, ...(beforeSequence !== undefined ? { beforeSequence } : {}) }
     });
   });
 
@@ -485,14 +494,15 @@ export const vaultRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) 
     }
 
     const { stepUpToken, reason } = parseResult.data;
-    const consumedUserId = await authStore.verifyAndConsumeStepUpToken(stepUpToken, 'CANCEL_CLAIM');
-    if (!consumedUserId || consumedUserId !== userId) {
-      return reply.status(403).send({ error: 'STEP_UP_REQUIRED', message: 'Valid step-up token required to cancel claim' });
-    }
 
     const vault = await vaultStore.getVaultById(id);
     if (!vault || vault.ownerId !== userId) {
       return reply.status(404).send({ error: 'VAULT_NOT_FOUND' });
+    }
+
+    const consumedUserId = await authStore.verifyAndConsumeStepUpToken(stepUpToken, 'CANCEL_CLAIM', vault.id);
+    if (!consumedUserId || consumedUserId !== userId) {
+      return reply.status(403).send({ error: 'STEP_UP_REQUIRED', message: 'Valid step-up token bound to this vault is required to cancel claim' });
     }
 
     try {

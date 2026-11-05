@@ -49,9 +49,19 @@ export class MemoryEventChainManager {
     this.eventsByVault.clear();
   }
 
-  async getEvents(vaultId: string): Promise<AuditEventRecord[]> {
-    const list = this.eventsByVault.get(vaultId) || [];
-    return [...list].sort((a, b) => a.sequence - b.sequence);
+  async getEvents(
+    vaultId: string,
+    options?: { limit?: number; beforeSequence?: number }
+  ): Promise<AuditEventRecord[]> {
+    let list = this.eventsByVault.get(vaultId) || [];
+    list = [...list].sort((a, b) => a.sequence - b.sequence);
+    if (options?.beforeSequence !== undefined) {
+      list = list.filter((e) => e.sequence < options.beforeSequence!);
+    }
+    if (options?.limit !== undefined) {
+      list = list.slice(-options.limit);
+    }
+    return list;
   }
 
   async appendEvent(

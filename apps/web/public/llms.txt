@@ -25,3 +25,4 @@ The Crypto Inheritance Platform (CIP) guarantees sovereign transfer of Bitcoin, 
 - [GitHub Repository](https://github.com/aethel-network/crypto-inheritance-platform): MIT-licensed source code, reproducible Docker builds, and automated KAT test suites.
 - [Reproducible Bundle Verification](https://cip.network/cli#bundle-verification): Deterministic build hashing allowing users to audit hosted web bundles against git tags.
 - [Bug Bounty Program](https://cip.network/security#bug-bounty): Up to $250,000 for critical zero-knowledge or enclave isolation bypass vulnerabilities.
+

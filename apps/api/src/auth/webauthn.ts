@@ -98,7 +98,7 @@ export async function verifyRegistrationCeremonyResponse(
     if (user && !user.emergencyKitVerifier) {
       emergencyKitMnemonic = generateEmergencyKitMnemonic();
       const salt = await secureRandomHex(16);
-      const verifier = computeMnemonicVerifier(emergencyKitMnemonic, salt);
+      const verifier = await computeMnemonicVerifier(emergencyKitMnemonic, salt);
       await authStore.setEmergencyKitVerifier(userId, verifier, salt);
     }
   }

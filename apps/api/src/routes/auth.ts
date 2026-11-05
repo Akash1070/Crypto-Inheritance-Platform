@@ -22,7 +22,7 @@ import {
 import { computeMnemonicVerifier } from '../auth/mnemonic.js';
 
 export async function authRoutes(fastify: FastifyInstance) {
-  // 1. Registration Options
+  // 1. Registration Options (no account created; no username enumeration)
   fastify.post('/register/options', async (request, reply) => {
     const parseResult = RegistrationOptionsRequestSchema.safeParse(request.body);
     if (!parseResult.success) {
@@ -30,17 +30,10 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
 
     const { username, email } = parseResult.data;
-    const existing = await authStore.getUserByName(username);
-    if (existing) {
-      return reply.status(409).send({
-        error: 'USERNAME_TAKEN',
-        message: 'This username is already registered. Please choose another username or log in.'
-      });
-    }
-
-    const user = await authStore.createUser(username, email);
-    const options = await generateRegistrationCeremonyOptions(user.id, user.username);
-    return reply.send({ userId: user.id, options });
+    const pendingUserId = globalThis.crypto.randomUUID();
+    await authStore.savePendingRegistration(pendingUserId, username, email);
+    const options = await generateRegistrationCeremonyOptions(pendingUserId, username);
+    return reply.send({ userId: pendingUserId, options });
   });
 
   // 2. Registration Verify
@@ -51,7 +44,24 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
 
     const { userId, deviceName, response } = parseResult.data;
+    const pending = await authStore.consumePendingRegistration(userId);
+    if (!pending) {
+      return reply.status(400).send({ error: 'NO_PENDING_REGISTRATION', message: 'Registration session not found or expired' });
+    }
+
+    let createdUserId: string | undefined;
     try {
+      try {
+        const user = await authStore.createUser(pending.username, pending.email);
+        createdUserId = user.id;
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : '';
+        if (message === 'USER_ALREADY_EXISTS') {
+          return reply.status(409).send({ error: 'USERNAME_TAKEN', message: 'This username is already registered.' });
+        }
+        throw err;
+      }
+
       const result = await verifyRegistrationCeremonyResponse(
         userId,
         deviceName,
@@ -59,6 +69,9 @@ export async function authRoutes(fastify: FastifyInstance) {
       );
       return reply.send(result);
     } catch (err: unknown) {
+      if (createdUserId) {
+        await authStore.deleteUser(createdUserId);
+      }
       const message = err instanceof Error ? err.message : 'Registration verification failed';
       fastify.log.warn({ err }, 'Registration verification failed');
       return reply.status(400).send({ error: 'REGISTRATION_FAILED', message });
@@ -181,7 +194,12 @@ export async function authRoutes(fastify: FastifyInstance) {
       await verifyAuthenticationCeremonyResponse(
         parseResult.data.response as unknown as AuthenticationResponseJSON
       );
-      const stepUpToken = await authStore.createStepUpToken(session.userId, parseResult.data.action);
+      const stepUpToken = await authStore.createStepUpToken(
+        session.userId,
+        parseResult.data.action,
+        300,
+        parseResult.data.vaultId
+      );
       return reply.send({ verified: true, stepUpToken, expiresInSeconds: 300 });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Step-up verification failed';
@@ -203,7 +221,12 @@ export async function authRoutes(fastify: FastifyInstance) {
       return reply.status(401).send({ error: 'INVALID_CREDENTIALS', message: 'Recovery verification failed' });
     }
 
-    const computedVerifier = computeMnemonicVerifier(mnemonic, user.emergencyKitSalt);
+    let computedVerifier: string;
+    try {
+      computedVerifier = await computeMnemonicVerifier(mnemonic, user.emergencyKitSalt);
+    } catch {
+      return reply.status(401).send({ error: 'INVALID_CREDENTIALS', message: 'Recovery verification failed' });
+    }
     if (computedVerifier !== user.emergencyKitVerifier) {
       return reply.status(401).send({ error: 'INVALID_CREDENTIALS', message: 'Recovery verification failed' });
     }

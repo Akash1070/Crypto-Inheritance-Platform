@@ -64,9 +64,25 @@ export async function ensureDatabase(): Promise<void> {
       token varchar(64) PRIMARY KEY,
       user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       action varchar(32) NOT NULL,
+      vault_id uuid,
       expires_at timestamptz NOT NULL
     );
+    ALTER TABLE step_up_tokens ADD COLUMN IF NOT EXISTS vault_id uuid;
     CREATE INDEX IF NOT EXISTS idx_stepup_expires ON step_up_tokens(expires_at);
+
+    CREATE TABLE IF NOT EXISTS pending_registrations (
+      user_id uuid PRIMARY KEY,
+      username varchar(64) NOT NULL,
+      email varchar(320) NOT NULL,
+      expires_at timestamptz NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_pending_reg_expires ON pending_registrations(expires_at);
+
+    CREATE TABLE IF NOT EXISTS rate_limits (
+      bucket varchar(192) PRIMARY KEY,
+      count integer NOT NULL DEFAULT 0,
+      reset_at timestamptz NOT NULL
+    );
 
     CREATE TABLE IF NOT EXISTS vaults (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

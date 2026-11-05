@@ -1,18 +1,36 @@
 import React from 'react';
-import { ShieldCheck, Landmark, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import {
+  ShieldCheck,
+  Landmark,
+  AlertTriangle,
+  CheckCircle2,
+  Plus,
+  Wallet,
+  Zap
+} from 'lucide-react';
 import type { VaultSummary } from '../../lib/api';
 import type { UserProfile } from '../../lib/auth';
 import { SpotlightCard } from '../ui/SpotlightCard';
 import { BorderBeam } from '../ui/BorderBeam';
 import { BadgeShimmer } from '../ui/BadgeShimmer';
 import { NumberTicker } from '../ui/NumberTicker';
+import { Button } from '../ui/Button';
 
 interface HeroCardProps {
   user: UserProfile;
   vaults: VaultSummary[];
+  onOpenCreateVault: () => void;
+  onOpenWalletModal: () => void;
+  onQuickDemoVault: () => void;
 }
 
-export function HeroCard({ user, vaults }: HeroCardProps) {
+export function HeroCard({
+  user,
+  vaults,
+  onOpenCreateVault,
+  onOpenWalletModal,
+  onQuickDemoVault
+}: HeroCardProps) {
   const active = vaults.filter((v) => v.state === 'ACTIVE').length;
   const challenged = vaults.filter((v) => v.state === 'CHALLENGE').length;
   const dateLabel = new Intl.DateTimeFormat(undefined, {
@@ -60,13 +78,45 @@ export function HeroCard({ user, vaults }: HeroCardProps) {
               {user.username}
             </span>
           </h2>
-          <p className="mt-2 text-sm text-slate-300 max-w-lg leading-relaxed">
-            Your estate is coordinated, monitored, and protected. Assert liveness with your
-            hardware security key to reset countdown timers and keep threshold shares locked.
+          <p className="mt-2 text-sm text-slate-300 max-w-xl leading-relaxed">
+            Your estate is coordinated, monitored, and protected. Create inheritance vaults, link sovereign
+            assets, and assert liveness with your hardware security key.
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-5 sm:items-end sm:justify-between pt-2 border-t border-white/5">
+        {/* Primary Action Button Suite */}
+        <div className="flex items-center gap-3 flex-wrap pt-1">
+          <Button
+            variant="primary"
+            size="md"
+            className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold text-xs shadow-lg shadow-blue-500/20"
+            onClick={onOpenCreateVault}
+          >
+            <Plus className="w-4 h-4" /> Create Inheritance Vault
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="md"
+            className="border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-mono text-xs"
+            onClick={onOpenWalletModal}
+          >
+            <Wallet className="w-3.5 h-3.5 text-blue-400" /> Connect Wallet & Assets
+          </Button>
+
+          {vaults.length === 0 && (
+            <Button
+              variant="secondary"
+              size="md"
+              className="border-emerald-500/30 bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-300 font-mono text-xs"
+              onClick={onQuickDemoVault}
+            >
+              <Zap className="w-3.5 h-3.5 text-emerald-400" /> 1-Click Quickstart Vault
+            </Button>
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-5 sm:items-end sm:justify-between pt-4 border-t border-white/5">
           <div className="flex items-center gap-6">
             {summary.map((item, index) => (
               <React.Fragment key={item.label}>

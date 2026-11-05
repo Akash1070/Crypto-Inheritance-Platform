@@ -41,13 +41,24 @@ export interface StepUpTokenRecord {
   token: string;
   userId: string;
   action: string;
+  vaultId?: string | undefined;
+  expiresAt: Date;
+}
+
+export interface PendingRegistrationRecord {
+  userId: string;
+  username: string;
+  email: string;
   expiresAt: Date;
 }
 
 export interface AuthStore {
   createUser(username: string, email: string): Promise<UserRecord>;
+  deleteUser(id: string): Promise<void>;
   getUserById(id: string): Promise<UserRecord | undefined>;
   getUserByName(username: string): Promise<UserRecord | undefined>;
+  savePendingRegistration(userId: string, username: string, email: string, ttlMinutes?: number): Promise<void>;
+  consumePendingRegistration(userId: string): Promise<PendingRegistrationRecord | undefined>;
   saveChallenge(userId: string, challenge: string, type: ChallengeRecord['type'], ttlSeconds?: number): Promise<void>;
   getAndConsumeChallenge(challenge: string): Promise<ChallengeRecord | undefined>;
   addCredential(userId: string, credentialId: string, publicKey: Uint8Array, signCount: number, deviceName: string, transports?: string[]): Promise<CredentialRecord>;
@@ -58,8 +69,8 @@ export interface AuthStore {
   createSession(userId: string, ttlHours?: number): Promise<SessionRecord>;
   getSession(sessionId: string): Promise<SessionRecord | undefined>;
   deleteSession(sessionId: string): Promise<void>;
-  createStepUpToken(userId: string, action: string, ttlSeconds?: number): Promise<string>;
-  verifyAndConsumeStepUpToken(token: string, action: string): Promise<string | undefined>;
+  createStepUpToken(userId: string, action: string, ttlSeconds?: number, vaultId?: string): Promise<string>;
+  verifyAndConsumeStepUpToken(token: string, action: string, vaultId?: string): Promise<string | undefined>;
   clear(): Promise<void>;
 }
 
@@ -71,6 +82,7 @@ export class MemoryAuthStore implements AuthStore {
   private challenges = new Map<string, ChallengeRecord>();
   private sessions = new Map<string, SessionRecord>();
   private stepUpTokens = new Map<string, StepUpTokenRecord>();
+  private pendingRegistrations = new Map<string, PendingRegistrationRecord>();
 
   constructor() {
     const timer = setInterval(() => {
@@ -100,6 +112,7 @@ export class MemoryAuthStore implements AuthStore {
     this.challenges.clear();
     this.sessions.clear();
     this.stepUpTokens.clear();
+    this.pendingRegistrations.clear();
   }
 
   async createUser(username: string, email: string): Promise<UserRecord> {
@@ -119,6 +132,31 @@ export class MemoryAuthStore implements AuthStore {
     this.usersByName.set(username.toLowerCase(), user);
     this.credentialsByUserId.set(id, []);
     return user;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    const user = this.usersById.get(id);
+    if (!user) return;
+    this.usersById.delete(id);
+    this.usersByName.delete(user.username);
+    this.credentialsByUserId.delete(id);
+  }
+
+  async savePendingRegistration(userId: string, username: string, email: string, ttlMinutes = 15): Promise<void> {
+    this.pendingRegistrations.set(userId, {
+      userId,
+      username,
+      email,
+      expiresAt: new Date(Date.now() + ttlMinutes * 60_000)
+    });
+  }
+
+  async consumePendingRegistration(userId: string): Promise<PendingRegistrationRecord | undefined> {
+    const record = this.pendingRegistrations.get(userId);
+    if (!record) return undefined;
+    this.pendingRegistrations.delete(userId);
+    if (new Date() > record.expiresAt) return undefined;
+    return record;
   }
 
   async getUserById(id: string): Promise<UserRecord | undefined> {
@@ -205,17 +243,18 @@ export class MemoryAuthStore implements AuthStore {
     this.sessions.delete(sessionId);
   }
 
-  async createStepUpToken(userId: string, action: string, ttlSeconds = 300): Promise<string> {
+  async createStepUpToken(userId: string, action: string, ttlSeconds = 300, vaultId?: string): Promise<string> {
     const token = await secureRandomHex(32);
-    this.stepUpTokens.set(token, { token, userId, action, expiresAt: new Date(Date.now() + ttlSeconds * 1000) });
+    this.stepUpTokens.set(token, { token, userId, action, vaultId, expiresAt: new Date(Date.now() + ttlSeconds * 1000) });
     return token;
   }
 
-  async verifyAndConsumeStepUpToken(token: string, action: string): Promise<string | undefined> {
+  async verifyAndConsumeStepUpToken(token: string, action: string, vaultId?: string): Promise<string | undefined> {
     const record = this.stepUpTokens.get(token);
     if (!record) return undefined;
     this.stepUpTokens.delete(token);
     if (new Date() > record.expiresAt || record.action !== action) return undefined;
+    if (vaultId !== undefined && record.vaultId !== vaultId) return undefined;
     return record.userId;
   }
 }
@@ -249,7 +288,7 @@ export class PgAuthStore implements AuthStore {
   }
 
   async clear(): Promise<void> {
-    await this.pool.query('TRUNCATE users, credentials, challenges, sessions, step_up_tokens CASCADE');
+    await this.pool.query('TRUNCATE users, credentials, challenges, sessions, step_up_tokens, pending_registrations CASCADE');
   }
 
   async createUser(username: string, email: string): Promise<UserRecord> {
@@ -259,6 +298,30 @@ export class PgAuthStore implements AuthStore {
       [username.toLowerCase(), email.toLowerCase()]
     );
     return this.mapUser(res.rows[0] as never);
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await this.pool.query('DELETE FROM users WHERE id = $1', [id]);
+  }
+
+  async savePendingRegistration(userId: string, username: string, email: string, ttlMinutes = 15): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO pending_registrations (user_id, username, email, expires_at)
+       VALUES ($1, $2, $3, now() + make_interval(mins => $4))
+       ON CONFLICT (user_id) DO UPDATE
+         SET username = EXCLUDED.username, email = EXCLUDED.email, expires_at = EXCLUDED.expires_at`,
+      [userId, username, email, ttlMinutes]
+    );
+  }
+
+  async consumePendingRegistration(userId: string): Promise<PendingRegistrationRecord | undefined> {
+    const res = await this.pool.query(
+      'DELETE FROM pending_registrations WHERE user_id = $1 AND expires_at > now() RETURNING *',
+      [userId]
+    );
+    if (!res.rowCount) return undefined;
+    const row = res.rows[0] as { user_id: string; username: string; email: string; expires_at: Date | string };
+    return { userId: row.user_id, username: row.username, email: row.email, expiresAt: new Date(row.expires_at) };
   }
 
   async getUserById(id: string): Promise<UserRecord | undefined> {
@@ -349,20 +412,23 @@ export class PgAuthStore implements AuthStore {
     await this.pool.query('DELETE FROM sessions WHERE id = $1', [sessionId]);
   }
 
-  async createStepUpToken(userId: string, action: string, ttlSeconds = 300): Promise<string> {
+  async createStepUpToken(userId: string, action: string, ttlSeconds = 300, vaultId?: string): Promise<string> {
     const token = await secureRandomHex(32);
     await this.pool.query(
-      `INSERT INTO step_up_tokens (token, user_id, action, expires_at)
-       VALUES ($1, $2, $3, now() + make_interval(secs => $4))`,
-      [token, userId, action, ttlSeconds]
+      `INSERT INTO step_up_tokens (token, user_id, action, vault_id, expires_at)
+       VALUES ($1, $2, $3, $4, now() + make_interval(secs => $5))`,
+      [token, userId, action, vaultId ?? null, ttlSeconds]
     );
     return token;
   }
 
-  async verifyAndConsumeStepUpToken(token: string, action: string): Promise<string | undefined> {
+  async verifyAndConsumeStepUpToken(token: string, action: string, vaultId?: string): Promise<string | undefined> {
     const res = await this.pool.query(
-      'DELETE FROM step_up_tokens WHERE token = $1 AND action = $2 AND expires_at > now() RETURNING user_id',
-      [token, action]
+      `DELETE FROM step_up_tokens
+       WHERE token = $1 AND action = $2 AND expires_at > now()
+         AND ($3::uuid IS NULL OR vault_id = $3)
+       RETURNING user_id`,
+      [token, action, vaultId ?? null]
     );
     return res.rowCount ? (res.rows[0] as { user_id: string }).user_id : undefined;
   }

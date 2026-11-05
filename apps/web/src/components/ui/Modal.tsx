@@ -4,42 +4,58 @@ import { X } from 'lucide-react';
 type Accent = 'primary' | 'danger' | 'default';
 
 interface ModalProps {
+  open?: boolean;
   title: React.ReactNode;
+  description?: React.ReactNode;
   icon?: React.ReactNode;
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
   accent?: Accent;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
 }
+
+const sizeClasses: Record<'sm' | 'md' | 'lg' | 'xl', string> = {
+  sm: 'max-w-md',
+  md: 'max-w-lg',
+  lg: 'max-w-2xl',
+  xl: 'max-w-4xl'
+};
 
 const accents: Record<Accent, string> = {
   primary: 'border-primary/25',
   danger: 'border-red-400/30',
-  default: 'border-line/[0.08]'
+  default: 'border-slate-800'
 };
 
 export function Modal({
+  open = true,
   title,
+  description,
   icon,
   onClose,
   children,
   footer,
   accent = 'default',
+  size = 'md',
   className = ''
 }: ModalProps) {
   useEffect(() => {
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [open, onClose]);
+
+  if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-md"
+        className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -47,19 +63,30 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         className={[
-          'glass-strong edge-highlight relative w-full rounded-3xl p-6 animate-fade-up max-h-[88vh] flex flex-col',
+          'relative w-full rounded-2xl p-6 sm:p-7 shadow-2xl animate-fade-up max-h-[90vh] flex flex-col',
+          'bg-slate-900/95 border backdrop-blur-xl text-slate-100',
+          sizeClasses[size],
           accents[accent],
           className
         ].join(' ')}
       >
-        <div className="flex items-start justify-between gap-4 pb-4 mb-4 border-b border-line/[0.08]">
-          <div className="flex items-center gap-3 min-w-0">
-            {icon && <span className="shrink-0">{icon}</span>}
-            <h3 className="text-base font-bold tracking-tight text-ink truncate">{title}</h3>
+        <div className="flex items-start justify-between gap-4 pb-4 mb-4 border-b border-slate-800">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5">
+              {icon && <span className="shrink-0">{icon}</span>}
+              <h3 className="text-base sm:text-lg font-bold tracking-tight text-white truncate">
+                {title}
+              </h3>
+            </div>
+            {description && (
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                {description}
+              </p>
+            )}
           </div>
           <button
             onClick={onClose}
-            className="shrink-0 p-1.5 rounded-lg text-faint hover:text-ink hover:bg-line/[0.06] transition"
+            className="shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -67,7 +94,7 @@ export function Modal({
         </div>
         <div className="min-h-0 overflow-y-auto flex-1 pr-1">{children}</div>
         {footer && (
-          <div className="pt-5 mt-5 border-t border-line/[0.08] flex items-center justify-end gap-3">
+          <div className="pt-4 mt-4 border-t border-slate-800 flex items-center justify-end gap-3">
             {footer}
           </div>
         )}

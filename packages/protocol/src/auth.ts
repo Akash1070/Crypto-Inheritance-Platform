@@ -30,6 +30,7 @@ export type AuthenticationVerificationRequest = z.infer<typeof AuthenticationVer
 
 export const StepUpVerificationRequestSchema = z.object({
   action: z.enum(['ADD_HEIR', 'REMOVE_HEIR', 'CHANGE_GRACE_PERIOD', 'CANCEL_CLAIM', 'DELETE_VAULT']),
+  vaultId: z.string().uuid().optional(),
   response: z.record(z.unknown())
 });
 

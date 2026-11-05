@@ -5,8 +5,8 @@ import {
   Lock,
   AlertTriangle,
   HardDrive,
-  KeyRound,
-  Clock
+  Clock,
+  KeyRound
 } from 'lucide-react';
 import { SpotlightCard } from '../ui/SpotlightCard';
 import { BorderBeam } from '../ui/BorderBeam';

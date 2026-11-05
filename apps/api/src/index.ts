@@ -6,8 +6,8 @@ import rateLimit from '@fastify/rate-limit';
 import { assertStrongSecret } from '@cip/protocol';
 import { authRoutes } from './routes/auth.js';
 import { vaultRoutes } from './routes/vaults.js';
-import { markdownRoutes } from './routes/markdown.js';
-import { hasDatabase, ensureDatabase } from './db/index.js';
+import { hasDatabase, ensureDatabase, getPool } from './db/index.js';
+import { PgRateLimiter } from './security/rateLimit.js';
 
 function assertBootSecrets() {
   if (process.env['NODE_ENV'] === 'production') {
@@ -68,10 +68,34 @@ export async function buildApp() {
     parseOptions: {}
   });
 
-  await app.register(rateLimit, {
-    max: 100,
-    timeWindow: '1 minute'
-  });
+  if (hasDatabase()) {
+    const limiter = new PgRateLimiter(getPool());
+    app.addHook('preHandler', async (request, reply) => {
+      if (request.url === '/health' || request.url.startsWith('/health')) {
+        return;
+      }
+      const ip = request.ip || 'unknown';
+      const path = request.url.split('?')[0] || '/';
+      let limit = 100;
+      let windowSeconds = 60;
+      if (path.startsWith('/auth/')) {
+        limit = 20;
+        windowSeconds = 60;
+      } else if (path.startsWith('/vaults') && request.method !== 'GET') {
+        limit = 60;
+        windowSeconds = 60;
+      }
+      const allowed = await limiter.consume(`${ip}:${request.method}:${path}`, limit, windowSeconds);
+      if (!allowed) {
+        return reply.status(429).send({ error: 'RATE_LIMITED', message: 'Too many requests. Please retry shortly.' });
+      }
+    });
+  } else {
+    await app.register(rateLimit, {
+      max: 100,
+      timeWindow: '1 minute'
+    });
+  }
 
   app.get('/health', async () => {
     return { status: 'healthy', timestamp: new Date().toISOString() };
@@ -82,9 +106,6 @@ export async function buildApp() {
 
   // Register Vault Coordination Routes
   await app.register(vaultRoutes, { prefix: '/vaults' });
-
-  // Register SEO / AEO / GEO Markdown Routes
-  await app.register(markdownRoutes);
 
   return app;
 }

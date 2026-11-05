@@ -146,3 +146,4 @@ cip reconstruct \
 - **License:** MIT License. Free for sovereign individuals, family offices, and developers.
 - **Repository:** https://github.com/aethel-network/crypto-inheritance-platform
 - **Security Disclosures:** security@cip.network (PGP Key available in SECURITY.md).
+

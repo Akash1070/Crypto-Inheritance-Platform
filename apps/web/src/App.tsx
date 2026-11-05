@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { RefreshCw, ShieldCheck, Lock, AlertTriangle } from 'lucide-react';
+import {
+  RefreshCw,
+  ShieldCheck,
+  AlertTriangle,
+  Plus,
+  Wallet,
+  Zap,
+  Terminal
+} from 'lucide-react';
 import {
   fetchCurrentUser,
   loginWithPasskey,
@@ -13,7 +21,8 @@ import {
   resumeVault,
   fetchEventChain,
   verifyEventChain,
-  cancelActiveClaim
+  cancelActiveClaim,
+  createDemoVault
 } from './lib/api';
 import type { VaultSummary, AuditEventItem, ChainVerificationResult } from './lib/api';
 import { AppShell } from './components/layout/AppShell';
@@ -22,11 +31,18 @@ import { AuthScreen } from './components/auth/AuthScreen';
 import { HeroCard } from './components/dashboard/HeroCard';
 import { SecurityCallout } from './components/dashboard/SecurityCallout';
 import { MetricsBar } from './components/dashboard/MetricsBar';
+import { EstateAssetsCard } from './components/dashboard/EstateAssetsCard';
+import { HeirsDirectoryCard } from './components/dashboard/HeirsDirectoryCard';
 import { VaultCard } from './components/vault/VaultCard';
 import { AuditChainModal } from './components/vault/AuditChainModal';
 import { CancelClaimModal } from './components/vault/CancelClaimModal';
+import { CreateVaultModal } from './components/vault/CreateVaultModal';
+import { WalletConnectModal, DEFAULT_DEMO_ESTATE } from './components/ui/WalletConnectModal';
+import type { EstateAsset } from './components/ui/WalletConnectModal';
 import { ToastStack } from './components/ui/Toast';
 import type { ToastKind, ToastMessage } from './components/ui/Toast';
+import { SpotlightCard } from './components/ui/SpotlightCard';
+import { Button } from './components/ui/Button';
 
 type Theme = 'light' | 'dark';
 
@@ -60,6 +76,28 @@ export function App() {
   const [audit, setAudit] = useState<AuditState | null>(null);
   const [cancelling, setCancelling] = useState<CancellingState | null>(null);
   const [cancelReason, setCancelReason] = useState('I am alive and well');
+
+  // Modals state
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const [createVaultModalOpen, setCreateVaultModalOpen] = useState(false);
+
+  // Estate Assets & Wallet state (persisted)
+  const [connectedAddress, setConnectedAddress] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('cip-wallet-address') || '0x71C5681A7b93910398F78627b0f6D472eC7F49A2';
+    } catch {
+      return '0x71C5681A7b93910398F78627b0f6D472eC7F49A2';
+    }
+  });
+
+  const [assets, setAssets] = useState<EstateAsset[]>(() => {
+    try {
+      const raw = localStorage.getItem('cip-estate-assets');
+      return raw ? JSON.parse(raw) : DEFAULT_DEMO_ESTATE;
+    } catch {
+      return DEFAULT_DEMO_ESTATE;
+    }
+  });
 
   useEffect(() => {
     const root = document.documentElement;
@@ -130,6 +168,31 @@ export function App() {
       await loadUserAndVaults();
     } catch (err: unknown) {
       setAuthError(err instanceof Error ? err.message : 'Login failed');
+    }
+  }
+
+  function handleConnectWallet(address: string, newAssets: EstateAsset[]) {
+    setConnectedAddress(address);
+    setAssets(newAssets);
+    try {
+      localStorage.setItem('cip-wallet-address', address);
+      localStorage.setItem('cip-estate-assets', JSON.stringify(newAssets));
+    } catch {
+      // ignore
+    }
+    pushToast('success', `Estate assets updated. Watched address: ${address.slice(0, 6)}...${address.slice(-4)}`);
+  }
+
+  async function handleQuickDemoVault() {
+    setBusyId('quick-demo');
+    try {
+      const res = await createDemoVault('Primary Sovereign Bitcoin Trust', 90);
+      pushToast('success', `Vault "${res.label}" initialized! Tamper-proof event chain started.`);
+      await loadVaults();
+    } catch (err) {
+      pushToast('error', err instanceof Error ? err.message : 'Failed to create demo vault');
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -218,23 +281,39 @@ export function App() {
 
   return (
     <AppShell>
-      <DashboardHeader user={user} theme={theme} onToggleTheme={toggleTheme} onLogin={handleLogin} />
+      <DashboardHeader
+        user={user}
+        theme={theme}
+        connectedAddress={connectedAddress}
+        onToggleTheme={toggleTheme}
+        onLogin={handleLogin}
+        onOpenWalletModal={() => setWalletModalOpen(true)}
+        onOpenCreateVault={() => setCreateVaultModalOpen(true)}
+      />
 
       {!user ? (
         <div className="flex-1 w-full flex flex-col">
           <AuthScreen error={authError} onLogin={handleLogin} onRegister={handleRegister} />
         </div>
       ) : (
-        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-2 pb-14 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="md:col-span-2">
-              <HeroCard user={user} vaults={vaults} />
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-16 space-y-6">
+          {/* Top Row: Hero Stats + Security Callout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <div className="lg:col-span-8">
+              <HeroCard
+                user={user}
+                vaults={vaults}
+                onOpenCreateVault={() => setCreateVaultModalOpen(true)}
+                onOpenWalletModal={() => setWalletModalOpen(true)}
+                onQuickDemoVault={handleQuickDemoVault}
+              />
             </div>
-            <div className="md:col-span-1">
+            <div className="lg:col-span-4">
               <SecurityCallout />
             </div>
           </div>
 
+          {/* Red Alert Banner if Claim in Progress */}
           {challengedVaults.length > 0 && (
             <div className="glass-strong edge-highlight border-red-400/30 rounded-2xl p-5 shadow-glow-red flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4">
@@ -267,32 +346,117 @@ export function App() {
             </div>
           )}
 
+          {/* Protected Assets & Estate Portfolio Bento */}
+          <EstateAssetsCard
+            assets={assets}
+            connectedAddress={connectedAddress}
+            onOpenWalletModal={() => setWalletModalOpen(true)}
+          />
+
+          {/* Beneficiaries & Heirs Bento */}
+          <HeirsDirectoryCard
+            onAddHeirClick={() => setCreateVaultModalOpen(true)}
+          />
+
+          {/* Numerical Metrics Bar */}
           <MetricsBar vaults={vaults} />
 
+          {/* Coordinated Vaults Section */}
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <h2 className="text-lg font-bold tracking-tight text-ink">
-                Coordinated Vaults
-                <span className="ml-2 text-sm font-mono text-faint tabular-nums">
-                  ({vaults.length})
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-lg font-bold tracking-tight text-ink">
+                  Coordinated Inheritance Vaults
+                </h2>
+                <span className="text-xs font-mono px-2.5 py-0.5 rounded-full border border-slate-700 bg-slate-900/60 text-slate-300 tabular-nums">
+                  {vaults.length} Active
                 </span>
-              </h2>
-              <p className="text-xs text-faint">Every action requires your hardware passkey.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  size="sm"
+                  variant="primary"
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs shadow-md shadow-blue-500/20"
+                  onClick={() => setCreateVaultModalOpen(true)}
+                >
+                  <Plus className="w-3.5 h-3.5" /> New Vault
+                </Button>
+                <p className="text-xs text-faint hidden sm:block">Hardware passkey required for all state transitions</p>
+              </div>
             </div>
 
             {vaults.length === 0 ? (
-              <div className="glass-subtle rounded-3xl py-16 px-6 text-center !border-dashed">
-                <div className="w-14 h-14 mx-auto rounded-2xl bg-line/[0.04] border border-line/[0.10] flex items-center justify-center text-faint mb-4">
-                  <Lock className="w-6 h-6" />
-                </div>
-                <p className="text-sm font-medium text-ink">No vaults connected to this account yet.</p>
-                <p className="text-xs text-faint mt-1.5 max-w-md mx-auto leading-relaxed">
-                  Initialize a cold vault on your air-gapped machine using{' '}
-                  <code className="text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded font-mono">
-                    cip init-vault
-                  </code>{' '}
-                  then upload its metadata here.
-                </p>
+              /* Rich Interactive Action Bento for Zero Vaults */
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <SpotlightCard
+                  spotlightColor="rgba(16, 185, 129, 0.15)"
+                  className="p-6 border-slate-800 bg-slate-900/60 flex flex-col justify-between space-y-4"
+                >
+                  <div className="space-y-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                      <Zap className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-sm font-bold text-white">1-Click Quickstart Vault</h3>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Initialize a sample encrypted vault with 90-day countdown, test assets, and designated heirs to explore the protocol immediately.
+                    </p>
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs"
+                    onClick={handleQuickDemoVault}
+                    loading={busyId === 'quick-demo'}
+                  >
+                    Deploy 1-Click Vault
+                  </Button>
+                </SpotlightCard>
+
+                <SpotlightCard
+                  spotlightColor="rgba(59, 130, 246, 0.15)"
+                  className="p-6 border-slate-800 bg-slate-900/60 flex flex-col justify-between space-y-4"
+                >
+                  <div className="space-y-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
+                      <Wallet className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-sm font-bold text-white">Connect Wallet & Assets</h3>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Link your MetaMask, cold storage Bitcoin address, or load the pre-built $1.6M whale estate template.
+                    </p>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    className="w-full border-slate-700 bg-slate-800 text-slate-200 font-mono text-xs"
+                    onClick={() => setWalletModalOpen(true)}
+                  >
+                    Configure Assets
+                  </Button>
+                </SpotlightCard>
+
+                <SpotlightCard
+                  spotlightColor="rgba(168, 85, 247, 0.15)"
+                  className="p-6 border-slate-800 bg-slate-900/60 flex flex-col justify-between space-y-4"
+                >
+                  <div className="space-y-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center">
+                      <Terminal className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-sm font-bold text-white">Air-Gapped CLI Paranoia</h3>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Split secrets cold on Tails OS using the <code className="text-purple-300 font-mono">cip</code> CLI and upload the sealed envelope.
+                    </p>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    className="w-full border-slate-700 bg-slate-800 text-slate-200 font-mono text-xs"
+                    onClick={() => setCreateVaultModalOpen(true)}
+                  >
+                    Open CLI Guide / Upload
+                  </Button>
+                </SpotlightCard>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -312,6 +476,7 @@ export function App() {
         </main>
       )}
 
+      {/* Institutional Footer */}
       <footer className="w-full border-t border-slate-800/80 bg-slate-950/40 backdrop-blur-md px-6 py-5 mt-auto">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] font-mono text-slate-400">
           <div className="flex items-center gap-3">
@@ -332,8 +497,25 @@ export function App() {
 
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
 
+      {/* Modals Suite */}
       {user && (
         <>
+          <WalletConnectModal
+            open={walletModalOpen}
+            connectedAddress={connectedAddress}
+            onConnect={handleConnectWallet}
+            onClose={() => setWalletModalOpen(false)}
+          />
+
+          <CreateVaultModal
+            open={createVaultModalOpen}
+            onSuccess={(createdLabel) => {
+              pushToast('success', `Vault "${createdLabel}" deployed successfully!`);
+              loadVaults();
+            }}
+            onClose={() => setCreateVaultModalOpen(false)}
+          />
+
           <AuditChainModal
             open={audit !== null}
             loading={audit?.loading ?? false}
@@ -341,6 +523,7 @@ export function App() {
             verification={audit?.verification ?? null}
             onClose={() => setAudit(null)}
           />
+
           <CancelClaimModal
             open={cancelling !== null}
             vaultLabel={cancelling?.label ?? ''}

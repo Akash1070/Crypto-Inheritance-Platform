@@ -39,6 +39,69 @@ export async function fetchVaults(): Promise<VaultSummary[]> {
   return data.vaults;
 }
 
+export interface CreateVaultPayload {
+  label: string;
+  config?: {
+    checkinIntervalDays: number;
+    gracePeriodDays: number;
+    challengeWindowDays: number;
+  };
+  ciphertextEnvelope: string;
+  sealedEscrowShare: string;
+}
+
+export async function createVault(payload: CreateVaultPayload): Promise<{ vaultId: string; label: string; state: string }> {
+  const res = await fetch(`${API_BASE}/vaults`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.error || 'Failed to create vault');
+  }
+  return res.json();
+}
+
+/**
+ * Creates a compliant encrypted vault package without client-side raw secret exposure.
+ */
+export async function createDemoVault(
+  label: string = 'Primary Cold Storage Vault',
+  checkinIntervalDays: number = 90
+): Promise<{ vaultId: string; label: string; state: string }> {
+  const randomHex = (len: number) =>
+    Array.from({ length: len }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+  const randomB64 = (len: number) =>
+    btoa(Array.from({ length: len }, () => String.fromCharCode(Math.floor(Math.random() * 256))).join(''));
+
+  const vaultId = `vlt-${randomHex(8)}-${randomHex(4)}-${randomHex(4)}-${randomHex(12)}`;
+  const envelope = {
+    magic: 'CIP_VAULT',
+    formatVersion: 1,
+    suiteId: 1,
+    vaultId,
+    createdAt: new Date().toISOString(),
+    nonce: randomB64(24),
+    ciphertext: randomB64(128),
+    metadataHash: randomHex(64)
+  };
+
+  const sealedEscrowShare = randomHex(96);
+
+  return createVault({
+    label,
+    config: {
+      checkinIntervalDays,
+      gracePeriodDays: 30,
+      challengeWindowDays: 30
+    },
+    ciphertextEnvelope: JSON.stringify(envelope, null, 2),
+    sealedEscrowShare
+  });
+}
+
 export async function checkinVault(vaultId: string): Promise<{ success: boolean; state: string; lastCheckinAt: string }> {
   const res = await fetch(`${API_BASE}/vaults/${vaultId}/checkin`, {
     method: 'POST',

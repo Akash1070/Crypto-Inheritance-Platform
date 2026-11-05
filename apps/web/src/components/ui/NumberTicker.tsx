@@ -51,3 +51,4 @@ export function NumberTicker({
 
   return <span className={`font-mono tabular-nums ${className}`}>{current}</span>;
 }
+

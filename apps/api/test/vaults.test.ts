@@ -253,8 +253,8 @@ describe('Vault Coordination API & Tamper-Proof Event Chaining', () => {
       expect(forbiddenRes.statusCode).toBe(403);
       expect(JSON.parse(forbiddenRes.payload).error).toBe('STEP_UP_REQUIRED');
 
-      // 2. Issue step-up token
-      const stepUpToken = await authStore.createStepUpToken(userA.id, 'ADD_HEIR');
+      // 2. Issue step-up token bound to this vault
+      const stepUpToken = await authStore.createStepUpToken(userA.id, 'ADD_HEIR', 300, vaultId);
 
       // 3. Succeeds with valid step-up token
       const successRes = await app.inject({
@@ -358,7 +358,7 @@ describe('Vault Coordination API & Tamper-Proof Event Chaining', () => {
       const { vaultId } = JSON.parse(createRes.payload);
 
       // Register heir on vault
-      const addHeirStepUp = await authStore.createStepUpToken(userA.id, 'ADD_HEIR');
+      const addHeirStepUp = await authStore.createStepUpToken(userA.id, 'ADD_HEIR', 300, vaultId);
       const addHeirRes = await app.inject({
         method: 'POST',
         url: `/vaults/${vaultId}/heirs`,
@@ -428,7 +428,7 @@ describe('Vault Coordination API & Tamper-Proof Event Chaining', () => {
       expect(JSON.parse(replayRes.payload).error).toBe('REPLAYED_CLAIM');
 
       // 4. Owner receives challenge notification and immediately cancels via passkey assertion
-      const cancelStepUp = await authStore.createStepUpToken(userA.id, 'CANCEL_CLAIM');
+      const cancelStepUp = await authStore.createStepUpToken(userA.id, 'CANCEL_CLAIM', 300, vaultId);
       const cancelRes = await app.inject({
         method: 'POST',
         url: `/vaults/${vaultId}/claim/cancel`,
