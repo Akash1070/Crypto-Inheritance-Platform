@@ -1,0 +1,25 @@
+{
+  "name": "@cip/release-signer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Isolated enclave microservice for multi-clock verified escrow share release",
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run",
+    "lint": "eslint src/ --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@cip/crypto-core": "workspace:*",
+    "@cip/protocol": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.7"
+  }
+}
+

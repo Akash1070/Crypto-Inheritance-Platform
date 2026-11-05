@@ -1,0 +1,36 @@
+rules:
+  - id: ban-insecure-randomness
+    languages: [javascript, typescript]
+    message: "CRITICAL: Math.random() is cryptographically insecure. Use crypto.getRandomValues() or libsodium randombytes_buf."
+    severity: ERROR
+    pattern: Math.random()
+
+  - id: ban-direct-innerhtml
+    languages: [javascript, typescript]
+    message: "CRITICAL: Direct innerHTML assignment detected. Vulnerable to XSS. Use safe text rendering or sanitized components."
+    severity: ERROR
+    pattern: $EL.innerHTML = $VAL
+
+  - id: ban-eval-new-function
+    languages: [javascript, typescript]
+    message: "CRITICAL: Dynamic code execution via eval or Function is strictly banned."
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: eval(...)
+          - pattern: new Function(...)
+
+  - id: ban-crypto-import-in-api-or-web
+    languages: [javascript, typescript]
+    message: "SECURITY BOUNDARY VIOLATION: Cryptography libraries must never be imported in apps/api or apps/web. All crypto must remain isolated in packages/crypto-core."
+    severity: ERROR
+    paths:
+      include:
+        - "apps/api/**"
+        - "apps/web/**"
+    pattern-either:
+      - pattern: import ... from 'libsodium-wrappers-sumo'
+      - pattern: import ... from '@noble/hashes'
+      - pattern: import ... from '@noble/curves'
+      - pattern: import ... from 'crypto'
+

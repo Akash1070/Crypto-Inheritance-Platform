@@ -1,0 +1,12 @@
+title = "Crypto Inheritance Platform Gitleaks Config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for non-secret test vectors and docs"
+paths = [
+  '''test/fixtures/''',
+  '''docs/'''
+]
+

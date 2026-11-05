@@ -1,0 +1,40 @@
+{
+  "name": "crypto-inheritance-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open-source zero-knowledge non-custodial crypto inheritance protocol & platform",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/crypto-inheritance-platform/crypto-inheritance-platform.git"
+  },
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@12.16.1",
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rimraf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
+    "audit:deps": "pnpm audit --audit-level=high",
+    "audit:secrets": "gitleaks detect --no-git -v",
+    "audit:semgrep": "semgrep --config=auto .",
+    "prepare": "husky || true"
+  },
+  "devDependencies": {
+    "@turbo/gen": "^2.4.4",
+    "@types/node": "^22.13.9",
+    "eslint": "^9.21.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.5.3",
+    "rimraf": "^6.0.1",
+    "turbo": "^2.4.4",
+    "typescript": "^5.8.2"
+  }
+}
+
