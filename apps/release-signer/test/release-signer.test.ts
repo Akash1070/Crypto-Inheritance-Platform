@@ -387,5 +387,19 @@ describe('Isolated Release-Signer Enclave (@cip/release-signer)', () => {
 
       expect(server).toBeDefined();
     });
+
+    it('initializes deterministically with persistent keys across container restarts', async () => {
+      const fixedBoxSeed = new Uint8Array(32).fill(0x33);
+      const fixedSignSeed = new Uint8Array(32).fill(0x77);
+
+      const { deriveBoxKeyPairFromPrivate, deriveSigningKeyPairFromPrivate } = await import('@cip/crypto-core');
+      const boxKp1 = await deriveBoxKeyPairFromPrivate(fixedBoxSeed);
+      const boxKp2 = await deriveBoxKeyPairFromPrivate(fixedBoxSeed);
+      expect(Buffer.from(boxKp1.publicKey).toString('hex')).toBe(Buffer.from(boxKp2.publicKey).toString('hex'));
+
+      const signKp1 = await deriveSigningKeyPairFromPrivate(fixedSignSeed);
+      const signKp2 = await deriveSigningKeyPairFromPrivate(fixedSignSeed);
+      expect(Buffer.from(signKp1.publicKey).toString('hex')).toBe(Buffer.from(signKp2.publicKey).toString('hex'));
+    });
   });
 });

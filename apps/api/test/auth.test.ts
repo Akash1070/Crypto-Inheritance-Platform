@@ -7,6 +7,7 @@ describe('WebAuthn Passkeys & Identity Layer', () => {
   let app: Awaited<ReturnType<typeof buildApp>>;
 
   beforeEach(async () => {
+    authStore.clear();
     app = await buildApp();
   });
 
@@ -44,6 +45,26 @@ describe('WebAuthn Passkeys & Identity Layer', () => {
         payload: { username: 'alice_cold', email: 'not-an-email' }
       });
       expect(badEmail.statusCode).toBe(400);
+    });
+
+    it('prevents account takeover by rejecting registration for existing usernames', async () => {
+      // First registration succeeds
+      const first = await app.inject({
+        method: 'POST',
+        url: '/auth/register/options',
+        payload: { username: 'charlie_owner', email: 'charlie@example.com' }
+      });
+      expect(first.statusCode).toBe(200);
+
+      // Second unauthenticated attempt with same username must be blocked
+      const hijackAttempt = await app.inject({
+        method: 'POST',
+        url: '/auth/register/options',
+        payload: { username: 'charlie_owner', email: 'attacker@evil.com' }
+      });
+      expect(hijackAttempt.statusCode).toBe(409);
+      const body = JSON.parse(hijackAttempt.payload);
+      expect(body.error).toBe('USERNAME_TAKEN');
     });
   });
 

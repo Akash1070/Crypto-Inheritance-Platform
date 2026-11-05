@@ -24,6 +24,10 @@ describe('Vault Coordination API & Tamper-Proof Event Chaining', () => {
   });
 
   beforeEach(async () => {
+    authStore.clear();
+    vaultStore.clear();
+    eventChainManager.clear();
+
     app = await buildApp();
 
     userA = await authStore.createUser('alice_vault_owner', 'alice@vault.org');

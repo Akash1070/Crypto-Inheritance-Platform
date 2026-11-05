@@ -12,11 +12,11 @@ export interface EnclaveTlsOptions {
 }
 
 export interface EnclaveServerOptions {
-  port?: number;
+  port?: number | undefined;
   enclaveKeyPair: BoxKeyPair;
   releaseSigningKey: SigningKeyPair;
-  serverSigningPublicKey?: Uint8Array;
-  tls?: EnclaveTlsOptions;
+  serverSigningPublicKey?: Uint8Array | undefined;
+  tls?: EnclaveTlsOptions | undefined;
 }
 
 export function createEnclaveServer(options: EnclaveServerOptions): http.Server | https.Server {

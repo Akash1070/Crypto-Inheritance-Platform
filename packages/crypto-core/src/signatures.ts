@@ -22,6 +22,28 @@ export async function generateSigningKeyPair(): Promise<SigningKeyPair> {
 }
 
 /**
+ * Derives an Ed25519 signing keypair from either a 32-byte seed or a 64-byte private key.
+ */
+export async function deriveSigningKeyPairFromPrivate(privateKey: Uint8Array): Promise<SigningKeyPair> {
+  const sodium = await ensureSodium();
+  if (privateKey.length === 32) {
+    const kp = sodium.crypto_sign_seed_keypair(privateKey);
+    return {
+      publicKey: kp.publicKey,
+      privateKey: kp.privateKey
+    };
+  }
+  if (privateKey.length === SIGN_PRIVATE_KEY_BYTES) {
+    const publicKey = sodium.crypto_sign_ed25519_sk_to_pk(privateKey);
+    return {
+      publicKey,
+      privateKey
+    };
+  }
+  throw new Error(`Invalid private key length: expected 32 or ${SIGN_PRIVATE_KEY_BYTES} bytes, got ${privateKey.length}`);
+}
+
+/**
  * Signs a 32-byte hash using an Ed25519 private key.
  */
 export async function signHash(

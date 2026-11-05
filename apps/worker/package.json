@@ -16,10 +16,12 @@
   "dependencies": {
     "@cip/crypto-core": "workspace:*",
     "@cip/protocol": "workspace:*",
+    "pg": "^8.23.1",
     "pg-boss": "^12.38.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.9",
+    "@types/pg": "^8.23.1",
     "typescript": "^5.8.2",
     "vitest": "^3.0.7"
   }

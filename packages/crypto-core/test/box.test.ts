@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   generateBoxKeyPair,
+  deriveBoxKeyPairFromPrivate,
   sealBox,
   openSealedBox,
   SealedBoxAuthError,
@@ -9,10 +10,16 @@ import {
 } from '../src/index.js';
 
 describe('X25519 Sealed Box', () => {
-  it('generates 32-byte public and private keys', async () => {
+  it('generates and derives 32-byte public and private keys deterministically', async () => {
     const kp = await generateBoxKeyPair();
     expect(kp.publicKey.length).toBe(BOX_PUBLIC_KEY_BYTES);
     expect(kp.privateKey.length).toBe(BOX_PRIVATE_KEY_BYTES);
+
+    const derived = await deriveBoxKeyPairFromPrivate(kp.privateKey);
+    expect(derived.publicKey).toEqual(kp.publicKey);
+    expect(derived.privateKey).toEqual(kp.privateKey);
+
+    await expect(deriveBoxKeyPairFromPrivate(new Uint8Array(16))).rejects.toThrow('Invalid private key length');
   });
 
   it('seals and opens plaintext successfully', async () => {

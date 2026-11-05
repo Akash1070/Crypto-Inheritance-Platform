@@ -49,6 +49,9 @@ export function App() {
   const [deviceNameInput, setDeviceNameInput] = useState('My YubiKey 5C');
   const [authError, setAuthError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [cancellingVaultId, setCancellingVaultId] = useState<string | null>(null);
+  const [cancelReasonInput, setCancelReasonInput] = useState<string>('I am alive and well');
 
   useEffect(() => {
     loadUserAndVaults();
@@ -93,50 +96,61 @@ export function App() {
   }
 
   async function handleCheckin(vaultId: string) {
+    setActionError(null);
     try {
       await checkinVault(vaultId);
       setActionSuccess('Liveness asserted successfully! Countdown timer reset.');
       const v = await fetchVaults();
       setVaults(v);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Checkin failed');
+      setActionError(err instanceof Error ? err.message : 'Checkin failed');
     }
   }
 
   async function handlePauseResume(vault: VaultSummary) {
+    setActionError(null);
     try {
       if (vault.state === 'PAUSED') {
         await resumeVault(vault.id);
+        setActionSuccess(`Vault "${vault.label}" resumed.`);
       } else {
         await pauseVault(vault.id);
+        setActionSuccess(`Vault "${vault.label}" countdown paused.`);
       }
       const v = await fetchVaults();
       setVaults(v);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Action failed');
+      setActionError(err instanceof Error ? err.message : 'Action failed');
     }
   }
 
-  async function handleCancelClaim(vaultId: string) {
-    const reason = prompt('Confirm cancellation reason (Biometric step-up required):', 'I am alive and well');
-    if (!reason) return;
+  function handleOpenCancelModal(vaultId: string) {
+    setCancellingVaultId(vaultId);
+    setCancelReasonInput('I am alive and well');
+  }
+
+  async function confirmCancelClaim() {
+    if (!cancellingVaultId) return;
+    setActionError(null);
     try {
-      await cancelActiveClaim(vaultId, reason);
-      alert('Claim cancelled and vault restored to ACTIVE status.');
+      await cancelActiveClaim(cancellingVaultId, cancelReasonInput || 'I am alive and well');
+      setActionSuccess('Claim cancelled and vault restored to ACTIVE status.');
+      setCancellingVaultId(null);
       const v = await fetchVaults();
       setVaults(v);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Cancellation failed');
+      setActionError(err instanceof Error ? err.message : 'Cancellation failed');
     }
   }
 
   async function handleViewAuditChain(vaultId: string) {
+    setActionError(null);
     try {
       const { events } = await fetchEventChain(vaultId);
       const verification = await verifyEventChain(vaultId);
       setSelectedVaultEvents({ vaultId, events, verification });
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Failed to load audit chain');
+      setActionError(err instanceof Error ? err.message : 'Failed to load audit chain');
     }
   }
 
@@ -210,6 +224,13 @@ export function App() {
           <div className="p-3 bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-sm rounded-lg flex items-center justify-between">
             <span>{actionSuccess}</span>
             <button onClick={() => setActionSuccess(null)} className="text-xs hover:underline text-emerald-400">Dismiss</button>
+          </div>
+        )}
+
+        {actionError && (
+          <div className="p-3 bg-red-950/80 border border-red-700 text-red-200 text-sm rounded-lg flex items-center justify-between">
+            <span>{actionError}</span>
+            <button onClick={() => setActionError(null)} className="text-xs hover:underline text-red-400">Dismiss</button>
           </div>
         )}
 
@@ -311,7 +332,7 @@ export function App() {
                 {vaults.filter((v) => v.state === 'CHALLENGE').map((v) => (
                   <button
                     key={v.id}
-                    onClick={() => handleCancelClaim(v.id)}
+                    onClick={() => handleOpenCancelModal(v.id)}
                     className="px-5 py-2.5 bg-white text-red-950 font-bold text-sm rounded-lg hover:bg-red-100 transition shadow-lg shrink-0"
                   >
                     I AM ALIVE — CANCEL CLAIM
@@ -497,6 +518,50 @@ export function App() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Mobile-Friendly Modal for Step-Up Claim Cancellation */}
+        {cancellingVaultId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-slate-900 border border-red-500/60 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+              <div className="flex items-center space-x-3 text-red-400">
+                <AlertTriangle className="w-6 h-6 shrink-0" />
+                <h3 className="text-lg font-bold text-white">Confirm Liveness & Cancel Claim</h3>
+              </div>
+              <p className="text-sm text-slate-300">
+                This will immediately abort the heir's release request and restore your vault to <strong>ACTIVE</strong> status.
+                A WebAuthn biometric passkey step-up assertion is required.
+              </p>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  Cancellation Reason / Statement
+                </label>
+                <input
+                  type="text"
+                  value={cancelReasonInput}
+                  onChange={(e) => setCancelReasonInput(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-red-500"
+                  placeholder="e.g. I am alive and well"
+                />
+              </div>
+              <div className="flex items-center justify-end space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setCancellingVaultId(null)}
+                  className="px-4 py-2 text-sm text-slate-400 hover:text-white transition"
+                >
+                  Abort
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmCancelClaim}
+                  className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold text-sm rounded-lg transition shadow-lg"
+                >
+                  Assert Liveness & Cancel Claim
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </main>

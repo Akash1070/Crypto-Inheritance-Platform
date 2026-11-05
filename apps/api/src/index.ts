@@ -8,6 +8,7 @@ import { vaultRoutes } from './routes/vaults.js';
 
 export async function buildApp() {
   const app = Fastify({
+    trustProxy: true,
     logger: {
       redact: ['req.headers.authorization', 'req.headers.cookie']
     }

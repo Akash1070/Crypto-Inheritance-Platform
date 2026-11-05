@@ -30,11 +30,15 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
 
     const { username, email } = parseResult.data;
-    let user = await authStore.getUserByName(username);
-    if (!user) {
-      user = await authStore.createUser(username, email);
+    const existing = await authStore.getUserByName(username);
+    if (existing) {
+      return reply.status(409).send({
+        error: 'USERNAME_TAKEN',
+        message: 'This username is already registered. Please choose another username or log in.'
+      });
     }
 
+    const user = await authStore.createUser(username, email);
     const options = await generateRegistrationCeremonyOptions(user.id, user.username);
     return reply.send({ userId: user.id, options });
   });
@@ -57,6 +61,55 @@ export async function authRoutes(fastify: FastifyInstance) {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Registration verification failed';
       fastify.log.warn({ err }, 'Registration verification failed');
+      return reply.status(400).send({ error: 'REGISTRATION_FAILED', message });
+    }
+  });
+
+  // 2b. Authenticated Add Passkey Options (for adding backup key)
+  fastify.post('/passkeys/add/options', async (request, reply) => {
+    const sessionId = getSessionIdFromRequest(request);
+    if (!sessionId) {
+      return reply.status(401).send({ error: 'UNAUTHORIZED' });
+    }
+    const session = await authStore.getSession(sessionId);
+    if (!session) {
+      return reply.status(401).send({ error: 'SESSION_EXPIRED' });
+    }
+    const user = await authStore.getUserById(session.userId);
+    if (!user) {
+      return reply.status(404).send({ error: 'USER_NOT_FOUND' });
+    }
+    const options = await generateRegistrationCeremonyOptions(user.id, user.username);
+    return reply.send({ userId: user.id, options });
+  });
+
+  // 2c. Authenticated Add Passkey Verify
+  fastify.post('/passkeys/add/verify', async (request, reply) => {
+    const sessionId = getSessionIdFromRequest(request);
+    if (!sessionId) {
+      return reply.status(401).send({ error: 'UNAUTHORIZED' });
+    }
+    const session = await authStore.getSession(sessionId);
+    if (!session) {
+      return reply.status(401).send({ error: 'SESSION_EXPIRED' });
+    }
+    const parseResult = RegistrationVerificationRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({ error: 'INVALID_REQUEST', details: parseResult.error.format() });
+    }
+    const { userId, deviceName, response } = parseResult.data;
+    if (userId !== session.userId) {
+      return reply.status(403).send({ error: 'FORBIDDEN', message: 'Cannot add credentials to another user' });
+    }
+    try {
+      const result = await verifyRegistrationCeremonyResponse(
+        userId,
+        deviceName,
+        response as unknown as RegistrationResponseJSON
+      );
+      return reply.send(result);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Registration verification failed';
       return reply.status(400).send({ error: 'REGISTRATION_FAILED', message });
     }
   });

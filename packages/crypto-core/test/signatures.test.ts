@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   generateSigningKeyPair,
+  deriveSigningKeyPairFromPrivate,
   signHash,
   verifySignature,
   computeEventHash,
@@ -14,6 +15,20 @@ describe('Ed25519 Signatures & Event Hashing', () => {
     const kp = await generateSigningKeyPair();
     expect(kp.publicKey.length).toBe(SIGN_PUBLIC_KEY_BYTES);
     expect(kp.privateKey.length).toBe(SIGN_PRIVATE_KEY_BYTES);
+
+    // Derivation from 64-byte private key
+    const derived64 = await deriveSigningKeyPairFromPrivate(kp.privateKey);
+    expect(derived64.publicKey).toEqual(kp.publicKey);
+    expect(derived64.privateKey).toEqual(kp.privateKey);
+
+    // Derivation from 32-byte seed
+    const seed = new Uint8Array(32).fill(77);
+    const derivedFromSeed = await deriveSigningKeyPairFromPrivate(seed);
+    expect(derivedFromSeed.publicKey.length).toBe(SIGN_PUBLIC_KEY_BYTES);
+    expect(derivedFromSeed.privateKey.length).toBe(SIGN_PRIVATE_KEY_BYTES);
+
+    // Invalid length
+    await expect(deriveSigningKeyPairFromPrivate(new Uint8Array(20))).rejects.toThrow('Invalid private key length');
   });
 
   it('signs and verifies a 32-byte hash', async () => {

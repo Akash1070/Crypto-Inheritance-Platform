@@ -7,7 +7,11 @@ import {
   CancelClaimRequestSchema,
   BANNED_SECRET_KEYS
 } from '@cip/protocol';
-import { generateSigningKeyPair, SigningKeyPair } from '@cip/crypto-core';
+import {
+  generateSigningKeyPair,
+  deriveSigningKeyPairFromPrivate,
+  SigningKeyPair
+} from '@cip/crypto-core';
 import { vaultStore } from '../vaults/store.js';
 import { authStore } from '../auth/store.js';
 import { eventChainManager } from '../events/hashChain.js';
@@ -18,7 +22,12 @@ let serverSigningKey: SigningKeyPair | null = null;
 
 export async function getServerSigningKey(): Promise<SigningKeyPair> {
   if (!serverSigningKey) {
-    serverSigningKey = await generateSigningKeyPair();
+    const keyHex = process.env['CIP_SERVER_SIGNING_KEY_HEX'];
+    if (keyHex) {
+      serverSigningKey = await deriveSigningKeyPairFromPrivate(Buffer.from(keyHex, 'hex'));
+    } else {
+      serverSigningKey = await generateSigningKeyPair();
+    }
   }
   return serverSigningKey;
 }

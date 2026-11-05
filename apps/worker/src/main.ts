@@ -1,24 +1,21 @@
 import { BackgroundScheduler } from './scheduler.js';
 import { ConsoleNotificationDispatcher } from './notifications.js';
-import { PgBossScheduler, VaultProvider } from './pgBossScheduler.js';
+import { PgBossScheduler } from './pgBossScheduler.js';
+import { PostgresVaultProvider } from './postgresProvider.js';
 
 export async function startWorker() {
   console.log('[CIP Worker] Starting Background Scheduler daemon...');
   const dispatcher = new ConsoleNotificationDispatcher();
   const dbUrl = process.env['DATABASE_URL'];
 
+  let provider: PostgresVaultProvider | null = null;
   if (dbUrl) {
-    console.log('[CIP Worker] Initializing Postgres-backed transactional scheduler (pg-boss)...');
     try {
-      const mockProvider: VaultProvider = {
-        async getActiveVaults() { return []; },
-        async updateVaultState(id, state) { console.log(`[CIP Worker] Vault ${id} transitioned to ${state}`); },
-        async logEvent(id, type) { console.log(`[CIP Worker] Merkle event logged for vault ${id}: ${type}`); }
-      };
-
+      provider = new PostgresVaultProvider(dbUrl);
+      console.log('[CIP Worker] Initializing Postgres-backed transactional scheduler (pg-boss)...');
       const pgBossScheduler = new PgBossScheduler({
         connectionString: dbUrl,
-        vaultProvider: mockProvider,
+        vaultProvider: provider,
         dispatcher
       });
 
@@ -39,7 +36,19 @@ export async function startWorker() {
   const runTick = async () => {
     try {
       const now = new Date();
-      const result = await scheduler.runCycle([], now);
+      const vaults = provider ? await provider.getActiveVaults() : [];
+      const result = await scheduler.runCycle(vaults, now);
+      if (provider && result.transitionedCount > 0) {
+        for (const item of result.details) {
+          if (item.previousState !== item.currentState) {
+            await provider.updateVaultState(item.vaultId, item.currentState);
+            await provider.logEvent(item.vaultId, item.currentState, {
+              from: item.previousState,
+              to: item.currentState
+            });
+          }
+        }
+      }
       if (result.transitionedCount > 0 || result.notificationsSent > 0) {
         console.log(`[CIP Worker] Cycle completed: ${result.transitionedCount} transitions, ${result.notificationsSent} notifications.`);
       }

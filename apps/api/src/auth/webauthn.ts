@@ -11,11 +11,18 @@ import { secureRandomHex } from '@cip/crypto-core';
 import { authStore } from './store.js';
 import { generateEmergencyKitMnemonic, computeMnemonicVerifier } from './mnemonic.js';
 
-export function getWebAuthnConfig() {
+export function getWebAuthnConfig(): { rpName: string; rpID: string; origin: string | string[] } {
+  const envOrigins = [
+    process.env['CIP_EXPECTED_ORIGIN'],
+    process.env['CIP_WEB_ORIGIN']
+  ].filter((o): o is string => Boolean(o && o.trim()));
+
+  const origins = envOrigins.length > 0 ? Array.from(new Set(envOrigins)) : ['http://localhost:5173'];
+
   return {
     rpName: 'Crypto Inheritance Platform',
     rpID: process.env['CIP_RP_ID'] || 'localhost',
-    origin: process.env['CIP_EXPECTED_ORIGIN'] || 'http://localhost:5173'
+    origin: origins.length === 1 ? origins[0]! : origins
   };
 }
 

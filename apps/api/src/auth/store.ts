@@ -51,10 +51,41 @@ export class MemoryAuthStore {
   private sessions = new Map<string, SessionRecord>();
   private stepUpTokens = new Map<string, StepUpTokenRecord>();
 
+  constructor() {
+    // Periodic garbage collection to prevent memory leaks from expired challenges and sessions
+    const timer = setInterval(() => {
+      this.pruneExpiredEntries();
+    }, 60_000);
+    if (timer.unref) timer.unref();
+  }
+
+  pruneExpiredEntries(): void {
+    const now = new Date();
+    for (const [key, val] of this.challenges.entries()) {
+      if (now > val.expiresAt) this.challenges.delete(key);
+    }
+    for (const [key, val] of this.sessions.entries()) {
+      if (now > val.expiresAt) this.sessions.delete(key);
+    }
+    for (const [key, val] of this.stepUpTokens.entries()) {
+      if (now > val.expiresAt) this.stepUpTokens.delete(key);
+    }
+  }
+
+  clear(): void {
+    this.usersById.clear();
+    this.usersByName.clear();
+    this.credentialsByUserId.clear();
+    this.credentialsById.clear();
+    this.challenges.clear();
+    this.sessions.clear();
+    this.stepUpTokens.clear();
+  }
+
   async createUser(username: string, email: string): Promise<UserRecord> {
     const existing = this.usersByName.get(username.toLowerCase());
     if (existing) {
-      return existing;
+      throw new Error('USER_ALREADY_EXISTS');
     }
 
     const id = globalThis.crypto.randomUUID();

@@ -22,6 +22,10 @@ export const GENESIS_PREV_HASH = '0000000000000000000000000000000000000000000000
 export class VaultEventChainManager {
   private eventsByVault = new Map<string, AuditEventRecord[]>();
 
+  clear(): void {
+    this.eventsByVault.clear();
+  }
+
   async getEvents(vaultId: string): Promise<AuditEventRecord[]> {
     const list = this.eventsByVault.get(vaultId) || [];
     return [...list].sort((a, b) => a.sequence - b.sequence);

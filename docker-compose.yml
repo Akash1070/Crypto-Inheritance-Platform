@@ -39,8 +39,10 @@ services:
       PORT: 3000
       DATABASE_URL: postgresql://cip_admin:cip_dev_password_change_in_prod@postgres:5432/cip_vaults
       CIP_WEB_ORIGIN: http://localhost:8080
+      CIP_EXPECTED_ORIGIN: http://localhost:8080
       CIP_COOKIE_SECRET: cip-dev-cookie-secret-key-32bytes-must-be-rotated-for-production
       CIP_ENCLAVE_URL: http://release-signer:3001
+      CIP_SERVER_SIGNING_KEY_HEX: 4444444444444444444444444444444444444444444444444444444444444444
     ports:
       - "3000:3000"
     networks:
@@ -86,6 +88,9 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
+      CIP_ENCLAVE_PRIVATE_KEY_HEX: 1111111111111111111111111111111111111111111111111111111111111111
+      CIP_RELEASE_SIGNING_KEY_HEX: 2222222222222222222222222222222222222222222222222222222222222222
+      CIP_SERVER_SIGNING_PUBLIC_KEY_HEX: d759793bbc13a2819a827c76adb6fba8a49aee007f49f2d0992d99b825ad2c48
     networks:
       - cip-enclave-net
     security_opt:

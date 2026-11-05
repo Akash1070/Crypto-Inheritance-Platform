@@ -50,6 +50,13 @@ export class MemoryVaultStore {
   private heirsByVaultId = new Map<string, HeirRecord[]>();
   private escrowSharesByVaultId = new Map<string, EscrowShareRecord>();
 
+  clear(): void {
+    this.vaultsById.clear();
+    this.blobsByVaultId.clear();
+    this.heirsByVaultId.clear();
+    this.escrowSharesByVaultId.clear();
+  }
+
   async createVault(
     ownerId: string,
     label: string,

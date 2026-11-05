@@ -28,6 +28,23 @@ export async function generateBoxKeyPair(): Promise<BoxKeyPair> {
 }
 
 /**
+ * Derives an X25519 keypair from a 32-byte private key.
+ */
+export async function deriveBoxKeyPairFromPrivate(privateKey: Uint8Array): Promise<BoxKeyPair> {
+  const sodium = await ensureSodium();
+  if (privateKey.length !== BOX_PRIVATE_KEY_BYTES) {
+    throw new Error(
+      `Invalid private key length: expected ${BOX_PRIVATE_KEY_BYTES} bytes, got ${privateKey.length}`
+    );
+  }
+  const publicKey = sodium.crypto_scalarmult_base(privateKey);
+  return {
+    publicKey,
+    privateKey
+  };
+}
+
+/**
  * Encrypts plaintext to a recipient's X25519 public key using a sealed box.
  * Generates an ephemeral keypair internally; only the recipient can decrypt.
  */
