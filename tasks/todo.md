@@ -21,11 +21,12 @@
 - [x] Implement `packages/cli`: Offline CLI for vault creation, key splitting, share sealing, and paper Heir Kit generation
 - [x] Implement test suite: 100% line coverage, KAT vectors, property fuzzing, negative edge cases, and end-to-end offline recovery verification
 
-## Phase 2: WebAuthn Passkeys & Identity (`apps/api`, `packages/protocol`)
-- [ ] Setup `@simplewebauthn/server` registration and assertion endpoints
-- [ ] Implement resident key enforcement, user verification, and minimum 2-key policy
-- [ ] Implement session management (`HttpOnly`, `Secure`, `SameSite=Strict`, `__Host-` cookies)
-- [ ] Implement step-up authentication tokens for high-risk mutations
+## Phase 2: WebAuthn Passkeys & Identity (`apps/api`, `packages/protocol`, `apps/web`) (COMPLETED)
+- [x] Setup `@simplewebauthn/server` and `@simplewebauthn/browser`
+- [x] Registration ceremony: Enforce resident keys, user verification (`required`), minimum 2 passkeys registered per owner (primary + backup hardware key)
+- [x] Authentication ceremony: Origin binding, challenge expiration, replay counters, and hardened `HttpOnly; SameSite=Strict; Secure` session cookies
+- [x] Step-up verification: Time-bounded single-use 5-minute tokens for high-risk actions (`ADD_HEIR`, `CANCEL_CLAIM`, `CHANGE_GRACE_PERIOD`)
+- [x] Emergency Kit generation: High-entropy mnemonic backup token for account re-association (held offline) with one-way HMAC-SHA256 verifier and 7-day security delay
 
 ## Phase 3: Vault Coordination API & Event Hash Chaining (`apps/api`, `packages/protocol`)
 - [ ] Setup PostgreSQL schema via Drizzle ORM (blind HMAC email indices, tenant RLS)

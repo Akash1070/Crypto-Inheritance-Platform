@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@cip/protocol": "workspace:*",
+    "@fastify/cookie": "^11.1.5",
     "@fastify/cors": "^10.1.0",
     "@fastify/helmet": "^13.0.1",
     "@simplewebauthn/server": "^13.1.0",
@@ -28,4 +29,3 @@
     "vitest": "^3.0.7"
   }
 }
-

@@ -5,4 +5,4 @@
 
 export * from './vault.js';
 export * from './events.js';
-
+export * from './auth.js';
